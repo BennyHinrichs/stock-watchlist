@@ -1,4 +1,5 @@
 <script lang="ts">
+  import "../app.css";
   import { browser } from "$app/environment";
   import { QueryClientProvider, QueryClient } from "@tanstack/svelte-query";
 
@@ -12,7 +13,7 @@
 </script>
 
 <QueryClientProvider client={queryClient}>
-  <main>
+  <main class="container h-svh pb-10">
     <slot />
   </main>
 </QueryClientProvider>
