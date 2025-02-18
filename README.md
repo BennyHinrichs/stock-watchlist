@@ -56,3 +56,29 @@ To publish your library to [npm](https://www.npmjs.com):
 ```bash
 npm publish
 ```
+
+# TODO
+
+- Watchlist Page
+  - Last Price
+    - I think I have to sub to the candle for this
+    - Figure out how to collate quote and candle responses
+  - Edit waitlist name
+    - Autofocus
+    - Check duplicate names on FE
+  - Delete waitlist
+  - Send KEEPALIVE messages?
+  - Limit to every 5 seconds
+  - Autocomplete actually gets and suggests symbols
+    - Checks for duplicates
+  - Would be nice to move all the WS stuff to its own file
+    - Not as familiar with distributing state in Svelte 5
+  - Test for extra long names on inputs and displays
+    - Add character limits?
+- Symbol Page
+  - Design
+  - Find chart library
+  - Sub to the WS data for the candles
+- Check accessibility
+- Add tests
+- Logout button?
