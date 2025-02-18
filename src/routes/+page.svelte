@@ -9,16 +9,20 @@
   import * as Command from "$lib/components/ui/command/index.js";
   import * as Popover from "$lib/components/ui/popover/index.js";
   import * as Dialog from "$lib/components/ui/dialog/index.js";
+  import * as Table from "$lib/components/ui/table/index.js";
   import { Input } from "$lib/components/ui/input/index.js";
   import { cn } from "$lib/utils.js";
   import {
     type BaseWatchList,
     checkSessionExpiration,
+    useModifyWatchlist,
     useAddWatchlist,
+    useGetWatchlist,
     useGetWatchlists,
     useLogin,
   } from "$lib/queries.js";
   import { page } from "$app/state";
+  import Autocomplete from "$lib/components/ui/autocomplete/autocomplete.svelte";
 
   const login = useLogin();
   const sessionExpiration = checkSessionExpiration();
@@ -36,6 +40,7 @@
 
   const watchlists = useGetWatchlists();
   const addWatchlist = useAddWatchlist();
+  const modifyWatchlist = useModifyWatchlist();
 
   let open = $state(false);
   let selectedWatchlist = $derived.by<string>(() => {
@@ -52,12 +57,15 @@
     return "";
   });
 
-  // if ($watchlists.isSuccess && $watchlists.data.data.items.length) {
-  //   const searchWatchlist = page.url.searchParams.get("watchlist");
-  //   selectedWatchlist = searchWatchlist
-  //     ? $watchlists.data.data.items.find(({ name }) => name === searchWatchlist)
-  //     : $watchlists.data.data.items[0];
-  // }
+  const watchlist = $derived.by(() => {
+    if ($watchlists.isSuccess && selectedWatchlist) {
+      const list = $watchlists.data.data.items.find(
+        (watchlist) => watchlist.name === selectedWatchlist,
+      );
+
+      return useGetWatchlist(list!.name);
+    }
+  });
 
   async function handleNewWatchlist(event: SubmitEvent) {
     event.preventDefault();
@@ -73,11 +81,27 @@
       document.querySelector("[data-dialog-close]") as HTMLButtonElement
     )?.click();
   }
+
+  async function handleNewSymbol(event: SubmitEvent) {
+    event.preventDefault();
+
+    const form = event.target as HTMLFormElement;
+    const body = new FormData(form);
+
+    await $modifyWatchlist.mutateAsync({
+      watchlistName: selectedWatchlist!,
+      symbolsToAdd: [body.get("name") as string],
+    });
+
+    (
+      document.querySelector("[data-dialog-close]") as HTMLButtonElement
+    )?.click();
+  }
 </script>
 
-<div class="flex justify-between py-4 max-sm:flex-col">
+<div class="flex justify-between gap-4 py-4 max-sm:flex-col">
   <div>
-    <h1 class="text-4xl text-amber-400">Watchlists 👁️📈</h1>
+    <h1 class="text-4xl text-amber-400 uppercase">👁️ Watchlists 📈</h1>
   </div>
 
   <div class="flex gap-2">
@@ -176,7 +200,71 @@
 </div>
 
 {#if selectedWatchlist}
-  {selectedWatchlist}
+  {#if $watchlist}
+    <Table.Root>
+      <Table.Caption>{selectedWatchlist}</Table.Caption>
+      <Table.Header>
+        <Table.Row>
+          <Table.Head class="flex items-center justify-between gap-2"
+            >Symbol
+            <Dialog.Root>
+              <Dialog.Trigger
+                class={cn(
+                  buttonVariants({ variant: "default" }),
+                  " bg-amber-400 hover:bg-amber-500",
+                )}
+                ><Plus /> <span class="max-sm:hidden">Add</span></Dialog.Trigger
+              >
+              <Dialog.Content class="sm:max-w-[425px]">
+                <Dialog.Header>
+                  <h2 class="text-lg leading-none font-semibold tracking-tight">
+                    Add Symbol
+                  </h2>
+                  <p class="text-muted-foreground text-sm">
+                    Chuck another symbol onto the pile
+                  </p>
+                </Dialog.Header>
+                <form
+                  id="add-watchlist-form"
+                  class="grid gap-4 py-4"
+                  onsubmit={handleNewSymbol}
+                >
+                  <div class="grid grid-cols-4 items-center gap-4">
+                    <label for="name" class="text-right">Name</label>
+                    <Autocomplete
+                      name="name"
+                      placeholder="GOOG"
+                      class="col-span-3"
+                    />
+                  </div>
+                </form>
+                <Dialog.Footer>
+                  <Button
+                    type="submit"
+                    form="add-watchlist-form"
+                    disabled={$addWatchlist.isPending}>Save changes</Button
+                  >
+                </Dialog.Footer>
+              </Dialog.Content>
+            </Dialog.Root>
+          </Table.Head>
+          <Table.Head class="text-right">Bid Price</Table.Head>
+          <Table.Head class="text-right">Ask Price</Table.Head>
+          <Table.Head class="text-right">Last Price</Table.Head>
+        </Table.Row>
+      </Table.Header>
+      <Table.Body>
+        <!-- {#each invoices as invoice, i (i)}
+      <Table.Row>
+        <Table.Cell class="font-medium">{invoice.invoice}</Table.Cell>
+        <Table.Cell class="text-right">{invoice.paymentStatus}</Table.Cell>
+        <Table.Cell class="text-right">{invoice.paymentMethod}</Table.Cell>
+        <Table.Cell class="text-right">{invoice.totalAmount}</Table.Cell>
+      </Table.Row>
+    {/each} -->
+      </Table.Body>
+    </Table.Root>
+  {/if}
 {:else}
   <h3>No List Selected</h3>
 {/if}

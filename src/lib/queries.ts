@@ -98,7 +98,7 @@ export function useLogin() {
 
 export type BaseWatchList = {
   name: string;
-  "watchlist-entries": {};
+  "watchlist-entries": { symbol: string }[];
   "cms-id": string;
   "group-name": string;
   "order-index": number;
@@ -116,6 +116,29 @@ export function useGetWatchlists() {
       } catch {}
 
       return await fetch(baseUrl + "/watchlists", {
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": "tastytrade-api-client/1.0",
+          Authorization: user?.["session-token"] || "",
+        },
+        method: "GET",
+      }).then((r) => r.json());
+    },
+  });
+}
+
+export function useGetWatchlist(name: string) {
+  return createQuery({
+    queryKey: ["watchlist", name],
+    queryFn: async (): Promise<{ data: { items: BaseWatchList[] } }> => {
+      let user;
+      try {
+        user = JSON.parse(
+          sessionStorage.getItem("user") || "invalid",
+        ) as UserResponse["data"];
+      } catch {}
+
+      return await fetch(baseUrl + "/watchlists/" + name, {
         headers: {
           "Content-Type": "application/json",
           "User-Agent": "tastytrade-api-client/1.0",
@@ -150,6 +173,70 @@ export function useAddWatchlist() {
           name: variables.name,
           "watchlist-entries": [],
         }),
+      }).then((r) => r.json());
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: ["watchlists"],
+        exact: true,
+        refetchType: "active",
+      });
+    },
+  });
+}
+
+export function useModifyWatchlist() {
+  const queryClient = useQueryClient();
+
+  return createMutation({
+    mutationKey: ["watchlist", "symbol"],
+    mutationFn: async (variables: {
+      watchlistName: string;
+      symbolsToAdd?: string[];
+      symbolsToRemove?: string[];
+    }) => {
+      const lists = queryClient.getQueryData<{
+        data: { items: BaseWatchList[] };
+      }>(["watchlists"]);
+      const list = lists?.data.items.find(
+        ({ name }) => name === variables.watchlistName,
+      );
+      // TODO actually make this block
+      let changed = false;
+
+      variables.symbolsToAdd?.forEach((symbol) => {
+        const index = list?.["watchlist-entries"].findIndex(
+          ({ symbol: s }) => s === symbol,
+        );
+        if (!index || index < 0) {
+          list?.["watchlist-entries"].push({ symbol });
+          changed = true;
+        }
+      });
+      variables.symbolsToRemove?.forEach((symbol) => {
+        const index = list?.["watchlist-entries"].findIndex(
+          ({ symbol: s }) => s === symbol,
+        );
+        if (index && index >= 0) {
+          list?.["watchlist-entries"].splice(index, 1);
+          changed = true;
+        }
+      });
+
+      let user;
+      try {
+        user = JSON.parse(
+          sessionStorage.getItem("user") || "invalid",
+        ) as UserResponse["data"];
+      } catch {}
+
+      return await fetch(baseUrl + "/watchlists/" + variables.watchlistName, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: user?.["session-token"] || "",
+        },
+        method: "PUT",
+        body: JSON.stringify(list),
       }).then((r) => r.json());
     },
     onSuccess: () => {
