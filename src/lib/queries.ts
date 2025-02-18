@@ -20,6 +20,16 @@ type UserResponse = {
   context: string;
 };
 
+function getUserFromSessionStorage() {
+  try {
+    return JSON.parse(
+      sessionStorage.getItem("user") || "invalid",
+    ) as UserResponse["data"];
+  } catch {
+    return null;
+  }
+}
+
 export function checkSessionExpiration() {
   if (typeof window === "undefined") return null;
 
@@ -108,12 +118,7 @@ export function useGetWatchlists() {
   return createQuery({
     queryKey: ["watchlists"],
     queryFn: async (): Promise<{ data: { items: BaseWatchList[] } }> => {
-      let user;
-      try {
-        user = JSON.parse(
-          sessionStorage.getItem("user") || "invalid",
-        ) as UserResponse["data"];
-      } catch {}
+      const user = getUserFromSessionStorage();
 
       return await fetch(baseUrl + "/watchlists", {
         headers: {
@@ -130,13 +135,8 @@ export function useGetWatchlists() {
 export function useGetWatchlist(name: string) {
   return createQuery({
     queryKey: ["watchlist", name],
-    queryFn: async (): Promise<{ data: { items: BaseWatchList[] } }> => {
-      let user;
-      try {
-        user = JSON.parse(
-          sessionStorage.getItem("user") || "invalid",
-        ) as UserResponse["data"];
-      } catch {}
+    queryFn: async (): Promise<{ data: BaseWatchList }> => {
+      const user = getUserFromSessionStorage();
 
       return await fetch(baseUrl + "/watchlists/" + name, {
         headers: {
@@ -156,12 +156,7 @@ export function useAddWatchlist() {
   return createMutation({
     mutationKey: ["watchlist"],
     mutationFn: async (variables: { name: string }) => {
-      let user;
-      try {
-        user = JSON.parse(
-          sessionStorage.getItem("user") || "invalid",
-        ) as UserResponse["data"];
-      } catch {}
+      const user = getUserFromSessionStorage();
 
       return await fetch(baseUrl + "/watchlists", {
         headers: {
@@ -201,7 +196,8 @@ export function useModifyWatchlist() {
       const list = lists?.data.items.find(
         ({ name }) => name === variables.watchlistName,
       );
-      // TODO actually make this block
+      if (list && !list["watchlist-entries"]) list["watchlist-entries"] = [];
+      // TODO actually make this block the request
       let changed = false;
 
       variables.symbolsToAdd?.forEach((symbol) => {
@@ -223,12 +219,7 @@ export function useModifyWatchlist() {
         }
       });
 
-      let user;
-      try {
-        user = JSON.parse(
-          sessionStorage.getItem("user") || "invalid",
-        ) as UserResponse["data"];
-      } catch {}
+      const user = getUserFromSessionStorage();
 
       return await fetch(baseUrl + "/watchlists/" + variables.watchlistName, {
         headers: {
@@ -245,6 +236,32 @@ export function useModifyWatchlist() {
         exact: true,
         refetchType: "active",
       });
+    },
+  });
+}
+
+type QuoteTokenResponse = {
+  data: {
+    token: string;
+    "dxlink-url": string;
+    level: "api";
+  };
+  context: string;
+};
+export function useGetApiQuoteToken() {
+  return createQuery({
+    queryKey: ["api-quote-token"],
+    queryFn: async (): Promise<QuoteTokenResponse> => {
+      const user = getUserFromSessionStorage();
+
+      return await fetch(baseUrl + "/api-quote-tokens", {
+        headers: {
+          "Content-Type": "application/json",
+          "User-Agent": "tastytrade-api-client/1.0",
+          Authorization: user?.["session-token"] || "",
+        },
+        method: "GET",
+      }).then((r) => r.json());
     },
   });
 }

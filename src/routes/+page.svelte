@@ -11,12 +11,12 @@
   import * as Dialog from "$lib/components/ui/dialog/index.js";
   import * as Table from "$lib/components/ui/table/index.js";
   import { Input } from "$lib/components/ui/input/index.js";
-  import { cn } from "$lib/utils.js";
+  import { cn, splitArrayAtDelimiters } from "$lib/utils.js";
   import {
-    type BaseWatchList,
     checkSessionExpiration,
     useModifyWatchlist,
     useAddWatchlist,
+    useGetApiQuoteToken,
     useGetWatchlist,
     useGetWatchlists,
     useLogin,
@@ -41,9 +41,13 @@
   const watchlists = useGetWatchlists();
   const addWatchlist = useAddWatchlist();
   const modifyWatchlist = useModifyWatchlist();
+  const apiQuoteToken = useGetApiQuoteToken();
 
+  let feedData: (string | number)[][] = $state([]);
   let open = $state(false);
-  let selectedWatchlist = $derived.by<string>(() => {
+  let ws: WebSocket | null = $state(null);
+
+  let selectedWatchlistName = $derived.by<string>(() => {
     const searchWatchlist = page.url.searchParams.get("watchlist");
 
     if (searchWatchlist) {
@@ -57,13 +61,99 @@
     return "";
   });
 
-  const watchlist = $derived.by(() => {
-    if ($watchlists.isSuccess && selectedWatchlist) {
+  let watchlist = $derived.by(() => {
+    if ($watchlists.isSuccess && selectedWatchlistName) {
       const list = $watchlists.data.data.items.find(
-        (watchlist) => watchlist.name === selectedWatchlist,
+        (watchlist) => watchlist.name === selectedWatchlistName,
       );
 
-      return useGetWatchlist(list!.name);
+      return list;
+    }
+  });
+
+  $effect(() => {
+    if ($apiQuoteToken.isSuccess) {
+      if (!ws) {
+        ws = new WebSocket($apiQuoteToken.data.data["dxlink-url"]);
+      }
+
+      const feedSubscriptionMessage = () => {
+        console.log(watchlist);
+        const newFeedData =
+          watchlist?.["watchlist-entries"]?.map(({ symbol }) => ({
+            symbol,
+            type: "Quote",
+          })) || [];
+        console.log(newFeedData);
+
+        if (!newFeedData.length) {
+          feedData = [];
+        }
+
+        ws!.send(
+          JSON.stringify({
+            type: "FEED_SUBSCRIPTION",
+            channel: 1,
+            add: newFeedData,
+          }),
+        );
+      };
+
+      if (watchlist && WebSocket.OPEN === ws.readyState) {
+        feedSubscriptionMessage();
+      }
+
+      ws.onopen = () => {
+        ws!.send(
+          JSON.stringify({
+            type: "SETUP",
+            channel: 0,
+            keepaliveTimeout: 60,
+            acceptKeepaliveTimeout: 60,
+            version: "1.0.0",
+          }),
+        );
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        console.log(data);
+
+        switch (data.type) {
+          case "SETUP":
+            ws!.send(
+              JSON.stringify({
+                type: "AUTH",
+                channel: 0,
+                token: $apiQuoteToken.data.data.token,
+              }),
+            );
+            break;
+
+          case "AUTH_STATE":
+            if (data.state === "AUTHORIZED") {
+              ws!.send(
+                JSON.stringify({
+                  type: "CHANNEL_REQUEST",
+                  channel: 1,
+                  service: "FEED",
+                  parameters: { contract: "AUTO" },
+                }),
+              );
+            }
+            break;
+
+          case "CHANNEL_OPENED":
+            feedSubscriptionMessage();
+            break;
+
+          case "FEED_DATA":
+            feedData = splitArrayAtDelimiters(data.data[1], "Quote").filter(
+              Array.isArray,
+            );
+            break;
+        }
+      };
     }
   });
 
@@ -89,7 +179,7 @@
     const body = new FormData(form);
 
     await $modifyWatchlist.mutateAsync({
-      watchlistName: selectedWatchlist!,
+      watchlistName: selectedWatchlistName!,
       symbolsToAdd: [body.get("name") as string],
     });
 
@@ -116,7 +206,7 @@
         role="combobox"
         aria-expanded={open}
       >
-        {selectedWatchlist || "Select a watchlist..."}
+        {selectedWatchlistName || "Select a watchlist..."}
         <ChevronsUpDown class="opacity-50" />
       </Popover.Trigger>
       <Popover.Content class="w-[200px] p-0">
@@ -143,7 +233,7 @@
                   >
                     <Check
                       class={cn(
-                        selectedWatchlist !== watchlist.name &&
+                        selectedWatchlistName !== watchlist.name &&
                           "text-transparent",
                       )}
                     />
@@ -199,10 +289,10 @@
   </div>
 </div>
 
-{#if selectedWatchlist}
-  {#if $watchlist}
+{#if selectedWatchlistName}
+  {#if watchlist}
     <Table.Root>
-      <Table.Caption>{selectedWatchlist}</Table.Caption>
+      <Table.Caption>{selectedWatchlistName}</Table.Caption>
       <Table.Header>
         <Table.Row>
           <Table.Head class="flex items-center justify-between gap-2"
@@ -254,14 +344,20 @@
         </Table.Row>
       </Table.Header>
       <Table.Body>
-        <!-- {#each invoices as invoice, i (i)}
-      <Table.Row>
-        <Table.Cell class="font-medium">{invoice.invoice}</Table.Cell>
-        <Table.Cell class="text-right">{invoice.paymentStatus}</Table.Cell>
-        <Table.Cell class="text-right">{invoice.paymentMethod}</Table.Cell>
-        <Table.Cell class="text-right">{invoice.totalAmount}</Table.Cell>
-      </Table.Row>
-    {/each} -->
+        {#each feedData as fd, i (i)}
+          <Table.Row>
+            <Table.Cell class="font-medium">{fd[0]}</Table.Cell>
+            <Table.Cell class="text-right"
+              >${(fd[6] as number).toFixed(2)}</Table.Cell
+            >
+            <Table.Cell class="text-right"
+              >${(fd[10] as number).toFixed(2)}</Table.Cell
+            >
+            <Table.Cell class="text-right"
+              >${(fd[4] as number).toFixed(2)}</Table.Cell
+            >
+          </Table.Row>
+        {/each}
       </Table.Body>
     </Table.Root>
   {/if}
