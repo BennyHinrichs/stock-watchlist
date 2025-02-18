@@ -213,7 +213,7 @@ export function useModifyWatchlist() {
         const index = list?.["watchlist-entries"].findIndex(
           ({ symbol: s }) => s === symbol,
         );
-        if (index && index >= 0) {
+        if (index !== undefined && index >= 0) {
           list?.["watchlist-entries"].splice(index, 1);
           changed = true;
         }

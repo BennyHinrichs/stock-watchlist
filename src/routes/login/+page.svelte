@@ -26,10 +26,14 @@
     const form = event.target as HTMLFormElement;
     const body = new FormData(form);
 
-    $login.mutate({
+    await $login.mutateAsync({
       username: body.get("username") as string,
       password: body.get("password") as string,
     });
+
+    if ($login.isSuccess) {
+      goto("/");
+    }
   }
 </script>
 
