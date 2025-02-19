@@ -132,42 +132,34 @@ export function useGetWatchlists() {
   });
 }
 
-export function useGetWatchlist(name: string) {
-  return createQuery({
-    queryKey: ["watchlist", name],
-    queryFn: async (): Promise<{ data: BaseWatchList }> => {
-      const user = getUserFromSessionStorage();
-
-      return await fetch(baseUrl + "/watchlists/" + name, {
-        headers: {
-          "Content-Type": "application/json",
-          "User-Agent": "tastytrade-api-client/1.0",
-          Authorization: user?.["session-token"] || "",
-        },
-        method: "GET",
-      }).then((r) => r.json());
-    },
-  });
-}
-
-export function useAddWatchlist() {
+export function useMutateWatchlist() {
   const queryClient = useQueryClient();
 
   return createMutation({
     mutationKey: ["watchlist"],
-    mutationFn: async (variables: { name: string }) => {
+    mutationFn: async (variables: { name: string; mode: "add" | "edit" }) => {
       const user = getUserFromSessionStorage();
+      const watchlists = queryClient.getQueryData<{
+        data: { items: BaseWatchList[] };
+      }>(["watchlists"]);
+      const watchlist = watchlists?.data.items.find(
+        ({ name }) => name === variables.name,
+      );
 
       return await fetch(baseUrl + "/watchlists", {
         headers: {
           "Content-Type": "application/json",
           Authorization: user?.["session-token"] || "",
         },
-        method: "POST",
-        body: JSON.stringify({
-          name: variables.name,
-          "watchlist-entries": [],
-        }),
+        method: variables.mode === "add" ? "POST" : "PUT",
+        body: JSON.stringify(
+          variables.mode === "add"
+            ? {
+                name: variables.name,
+                "watchlist-entries": [],
+              }
+            : { ...watchlist, name: variables.name },
+        ),
       }).then((r) => r.json());
     },
     onSuccess: () => {

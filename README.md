@@ -81,5 +81,9 @@ npm publish
   - [ ] Sub to the WS data for the candles
 - [ ] Check accessibility
 - [ ] Add tests
-- [ ] Logout button?
+- Login
+  - [ ] Fix logging in so that it actually sends you to the `/` route
+  - [ ] Send refresh token if expired
+  - [ ] Send to `/login` if that fails
+  - [ ] Logout button
 - [ ] General error handling

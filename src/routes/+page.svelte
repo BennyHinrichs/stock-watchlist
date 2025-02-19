@@ -13,7 +13,7 @@
   import { cn, splitArrayAtDelimiters } from "$lib/utils.js";
   import {
     checkSessionExpiration,
-    useAddWatchlist,
+    useMutateWatchlist,
     useGetApiQuoteToken,
     useGetWatchlists,
     useLogin,
@@ -37,7 +37,7 @@
   }
 
   const watchlists = useGetWatchlists();
-  const addWatchlist = useAddWatchlist();
+  const mutateWatchlist = useMutateWatchlist();
   const modifyWatchlist = useModifyWatchlist();
 
   let allFeedData: FeedData = $state({});
@@ -77,20 +77,22 @@
 
   $effect(() => useWebSocket({ watchlist, allFeedData }));
 
-  async function handleNewWatchlist(event: SubmitEvent) {
-    event.preventDefault();
+  const handleMutateWatchlist = (mode: "add" | "edit") =>
+    async function (event: SubmitEvent) {
+      event.preventDefault();
 
-    const form = event.target as HTMLFormElement;
-    const body = new FormData(form);
+      const form = event.target as HTMLFormElement;
+      const body = new FormData(form);
 
-    await $addWatchlist.mutateAsync({
-      name: body.get("name") as string,
-    });
+      await $mutateWatchlist.mutateAsync({
+        name: body.get("name") as string,
+        mode,
+      });
 
-    (
-      document.querySelector("[data-dialog-close]") as HTMLButtonElement
-    )?.click();
-  }
+      (
+        document.querySelector("[data-dialog-close]") as HTMLButtonElement
+      )?.click();
+    };
 </script>
 
 <div class="flex justify-between gap-4 py-6 max-sm:flex-col">
@@ -152,9 +154,9 @@
     </Popover.Root>
 
     <ManageWatchlistDialog
-      handleSubmit={handleNewWatchlist}
+      handleSubmit={handleMutateWatchlist("add")}
       mode="add"
-      submitPending={$addWatchlist.isPending}
+      submitPending={$mutateWatchlist.isPending}
       watchlistName={watchlist?.name}
     ></ManageWatchlistDialog>
   </div>
@@ -176,7 +178,7 @@
           <Table.Head class=""
             ><div class="flex items-center justify-end gap-2">
               <ManageWatchlistDialog
-                handleSubmit={() => void "TODO"}
+                handleSubmit={handleMutateWatchlist("edit")}
                 mode="edit"
                 submitPending={false}
                 watchlistName={watchlist?.name}
@@ -190,46 +192,48 @@
           </Table.Head>
         </Table.Row>
       </Table.Header>
-      <Table.Body>
-        {#each currentFeedData as fd, i (i)}
-          <Table.Row>
-            <Table.Cell class="font-medium">{fd.name}</Table.Cell>
-            <Table.Cell class="text-right"
-              >{typeof fd.ask === "number"
-                ? `$${fd.ask.toFixed(2)}`
-                : "?"}</Table.Cell
-            >
-            <Table.Cell class="text-right"
-              >{typeof fd.bid === "number"
-                ? `$${fd.bid.toFixed(2)}`
-                : "?"}</Table.Cell
-            >
-            <Table.Cell class="text-right"
-              >{typeof fd.last === "number"
-                ? `$${fd.last.toFixed(2)}`
-                : "?"}</Table.Cell
-            >
-            <Table.Cell class="flex items-center justify-end gap-2">
-              <DeleteDialog
-                handleConfirm={async () => {
-                  await $modifyWatchlist.mutateAsync({
-                    watchlistName: watchlist?.name,
-                    symbolsToRemove: [fd.name],
-                  });
+      <svelte:boundary onerror={(error) => console.error(error)}>
+        <Table.Body>
+          {#each currentFeedData as fd, i (i)}
+            <Table.Row>
+              <Table.Cell class="font-medium">{fd.name}</Table.Cell>
+              <Table.Cell class="text-right"
+                >{typeof fd.ask === "number"
+                  ? `$${fd.ask.toFixed(2)}`
+                  : "?"}</Table.Cell
+              >
+              <Table.Cell class="text-right"
+                >{typeof fd.bid === "number"
+                  ? `$${fd.bid.toFixed(2)}`
+                  : "?"}</Table.Cell
+              >
+              <Table.Cell class="text-right"
+                >{typeof fd.last === "number"
+                  ? `$${fd.last.toFixed(2)}`
+                  : "?"}</Table.Cell
+              >
+              <Table.Cell class="flex items-center justify-end gap-2">
+                <DeleteDialog
+                  handleConfirm={async () => {
+                    await $modifyWatchlist.mutateAsync({
+                      watchlistName: watchlist?.name,
+                      symbolsToRemove: [fd.name],
+                    });
 
-                  (
-                    document.querySelector(
-                      "[data-dialog-close]",
-                    ) as HTMLButtonElement
-                  )?.click();
-                }}
-                message="Are you sure you want to remove this symbol?"
-                confirmPending={$modifyWatchlist.isPending}
-              ></DeleteDialog></Table.Cell
-            >
-          </Table.Row>
-        {/each}
-      </Table.Body>
+                    (
+                      document.querySelector(
+                        "[data-dialog-close]",
+                      ) as HTMLButtonElement
+                    )?.click();
+                  }}
+                  message="Are you sure you want to remove this symbol?"
+                  confirmPending={$modifyWatchlist.isPending}
+                ></DeleteDialog></Table.Cell
+              >
+            </Table.Row>
+          {/each}
+        </Table.Body>
+      </svelte:boundary>
     </Table.Root>
   {/if}
 {:else}
