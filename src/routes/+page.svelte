@@ -34,7 +34,7 @@
   }
 
   if ((browser && !sessionExpiration) || sessionExpiration?.isSessionExpired) {
-    goto("/login");
+    goto(`${base}/login`);
   }
 
   const watchlists = useGetWatchlists();
@@ -88,7 +88,7 @@
       )?.click();
 
       if (name !== selectedWatchlistName) {
-        goto(`?watchlist=${name}`);
+        goto(`${base}?watchlist=${name}`);
       }
     };
 </script>
@@ -131,7 +131,7 @@
                   <Command.Item
                     value={watchlist.name}
                     onSelect={() => {
-                      goto(`?watchlist=${watchlist.name}`);
+                      goto(`${base}?watchlist=${watchlist.name}`);
                       open = false;
                     }}
                   >

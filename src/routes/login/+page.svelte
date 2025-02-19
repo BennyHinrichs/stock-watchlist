@@ -1,6 +1,7 @@
 <script lang="ts">
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
+  import { base } from "$app/paths";
   import Button from "$lib/components/ui/button/button.svelte";
   import * as Card from "$lib/components/ui/card/index.js";
   import Input from "$lib/components/ui/input/input.svelte";
@@ -17,7 +18,7 @@
   }
 
   if (browser && sessionExpiration?.isSessionExpired === false) {
-    goto("/");
+    goto("${base}/");
   }
 
   async function handleSubmit(event: Event) {
@@ -30,7 +31,7 @@
       username: body.get("username") as string,
       password: body.get("password") as string,
       onSuccess: () => {
-        goto("/");
+        goto(`${base}/`);
       },
     });
   }

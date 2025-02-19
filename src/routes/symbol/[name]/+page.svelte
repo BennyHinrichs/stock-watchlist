@@ -15,8 +15,7 @@
 
 <div class="flex flex-col justify-between gap-4 py-6 max-sm:flex-col">
   <div class="flex flex-col gap-4">
-    <a href={`/${base}/`}
-      ><h1 class="text-4xl uppercase">👁️ Watchlists 📈</h1></a
+    <a href={`${base}/`}><h1 class="text-4xl uppercase">👁️ Watchlists 📈</h1></a
     >
     <h1 class="text-4xl text-amber-400 uppercase">${symbol}</h1>
   </div>

@@ -4,14 +4,14 @@
   "homepage": "https://bennyhinrichs.github.io/stock-watchlist/",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build && npm run prepack",
+    "build": "vite build && sed -i '' 's/_app/app/g' build/index.html && mv build/_app build/app && cp build/index.html build/404.html && touch build/.nojekyll && npm run prepack",
     "preview": "vite preview",
     "prepare": "svelte-kit sync || echo ''",
     "prepack": "svelte-kit sync && svelte-package && publint",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "predeploy": "pnpm run build",
-    "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d build"
   },
   "files": [
     "dist",

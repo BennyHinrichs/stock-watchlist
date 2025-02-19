@@ -1,4 +1,10 @@
-## Getting it going
+## Demo
+
+https://bennyhinrichs.github.io/stock-watchlist/
+
+I think I got it working in GitHub Pages, so you shouldn't have to download the code and run locally. It was pretty brutal to figure out what their deployer didn't like about the SvleteKit output (as you can see in my build script), so there may be a bug or two with the routing there still.
+
+## Run Locally
 
 This assumes you have pnpm installed
 
@@ -6,7 +12,9 @@ This assumes you have pnpm installed
 pnpm i
 pnpm dev
 http://localhost:5173
+
 OR
+
 pnpm build
 pnpm preview
 http://localhost:4173
