@@ -9,7 +9,7 @@ pnpm dev
 
 # TODO
 
-I didn't get anywhere near as much done as I would have liked. Here are some of the things I wanted to tackle but didn't get the time for.
+We'll see if I ever get to these
 
 - Watchlist Page
   - [x] Last Price
