@@ -5,7 +5,7 @@ import {
   type QuoteTokenResponse,
 } from "./queries.js";
 import { splitArrayAtDelimiters } from "./utils.js";
-import { allFeedData } from "../routes/state.svelte.js";
+import { allFeedData, symbolData } from "../routes/state.svelte.js";
 
 export type FeedData = {
   [symbol: string]: {
@@ -16,10 +16,27 @@ export type FeedData = {
   };
 };
 
+export type SymbolData = {
+  name: string;
+  time: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+};
+
 const QUOTE_CHANNEL = 1;
 const CANDLE_CHANNEL = 3;
 
-export function useWebSocket({ watchlist }: { watchlist?: BaseWatchList }) {
+let ws: WebSocket | null = $state(null);
+
+export function useWebSocket({
+  watchlist,
+  symbol,
+}: {
+  watchlist?: BaseWatchList;
+  symbol?: string;
+}) {
   let apiQuoteToken = $state<QueryObserverResult<
     QuoteTokenResponse,
     Error
@@ -29,26 +46,36 @@ export function useWebSocket({ watchlist }: { watchlist?: BaseWatchList }) {
     apiQuoteToken = value;
   });
 
-  let ws: WebSocket | null = $state(null);
-
   const feedSubscriptionMessage = $derived.by(
     () => (channel?: typeof QUOTE_CHANNEL | typeof CANDLE_CHANNEL) => {
       const newFeedData: Record<number, {}[]> = {
         [QUOTE_CHANNEL]: [],
         [CANDLE_CHANNEL]: [],
       };
-      watchlist?.["watchlist-entries"]?.forEach(({ symbol }) => {
-        newFeedData[QUOTE_CHANNEL].push({
-          symbol,
-          type: "Quote",
-        });
-        newFeedData[CANDLE_CHANNEL].push({
-          symbol,
-          type: "Candle",
-        });
-      }) || [];
 
-      if (!channel || channel === QUOTE_CHANNEL) {
+      if (watchlist) {
+        watchlist["watchlist-entries"]?.forEach(({ symbol }) => {
+          newFeedData[QUOTE_CHANNEL].push({
+            symbol,
+            type: "Quote",
+          });
+          newFeedData[CANDLE_CHANNEL].push({
+            symbol,
+            type: "Candle",
+          });
+        });
+      } else if (symbol) {
+        newFeedData[CANDLE_CHANNEL].push({
+          symbol: `${symbol}{=30m}`,
+          type: "Candle",
+          fromTime: Date.now() - 1000 * 60 * 60 * 24,
+        });
+      }
+
+      if (
+        newFeedData[QUOTE_CHANNEL].length &&
+        (!channel || channel === QUOTE_CHANNEL)
+      ) {
         ws!.send(
           JSON.stringify({
             type: "FEED_SUBSCRIPTION",
@@ -58,7 +85,10 @@ export function useWebSocket({ watchlist }: { watchlist?: BaseWatchList }) {
         );
       }
 
-      if (!channel || channel === CANDLE_CHANNEL) {
+      if (
+        newFeedData[CANDLE_CHANNEL].length &&
+        (!channel || channel === CANDLE_CHANNEL)
+      ) {
         ws!.send(
           JSON.stringify({
             type: "FEED_SUBSCRIPTION",
@@ -134,6 +164,7 @@ export function useWebSocket({ watchlist }: { watchlist?: BaseWatchList }) {
 
           case "FEED_DATA": {
             const newData: FeedData = {};
+            const newSymbolData: SymbolData[] = [];
 
             splitArrayAtDelimiters(
               data.data[1],
@@ -141,23 +172,44 @@ export function useWebSocket({ watchlist }: { watchlist?: BaseWatchList }) {
             )
               .filter(Array.isArray)
               .forEach((fd) => {
-                const [name] = fd as [string];
-                const newFdData =
-                  data.channel === QUOTE_CHANNEL
-                    ? {
-                        name,
-                        bid: fd[6] as number,
-                        ask: fd[10] as number,
-                      }
-                    : {
-                        name,
-                        last: fd[10] as number,
-                      };
+                if (watchlist) {
+                  const [name] = fd as [string];
+                  const newFdData =
+                    data.channel === QUOTE_CHANNEL
+                      ? {
+                          name,
+                          bid: fd[6] as number,
+                          ask: fd[10] as number,
+                        }
+                      : {
+                          name,
+                          last: fd[10] as number,
+                        };
 
-                newData[name] = { ...allFeedData.current[name], ...newFdData };
+                  newData[name] = {
+                    ...allFeedData.current[name],
+                    ...newFdData,
+                  };
+                } else if (symbol) {
+                  if (fd[7] && fd[10]) {
+                    newSymbolData.push({
+                      name: symbol,
+                      time: new Date(fd[4] as number).toISOString(),
+                      open: fd[7] as number,
+                      high: fd[8] as number,
+                      low: fd[9] as number,
+                      close: fd[10] as number,
+                    });
+                  }
+                }
               });
 
-            allFeedData.current = newData;
+            if (watchlist) {
+              allFeedData.current = newData;
+            } else if (symbol) {
+              symbolData.current = [...newSymbolData];
+              console.log(symbolData.current);
+            }
             break;
           }
         }

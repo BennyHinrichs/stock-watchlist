@@ -19,8 +19,7 @@
     useModifyWatchlist,
   } from "$lib/queries.js";
   import { page } from "$app/state";
-  import { useWebSocket, type FeedData } from "$lib/websocket.svelte.js";
-  import { useQueryClient } from "@tanstack/svelte-query";
+  import { useWebSocket } from "$lib/websocket.svelte.js";
   import { allFeedData } from "./state.svelte.js";
 
   const login = useLogin();
@@ -40,11 +39,7 @@
   const watchlists = useGetWatchlists();
   const mutateWatchlist = useMutateWatchlist();
   const modifyWatchlist = useModifyWatchlist();
-  const queryClient = useQueryClient();
 
-  // let allFeedData = $derived.by(() =>
-  //   queryClient.getQueryData<Record<string, FeedData>>(["all-feed-data"]),
-  // );
   let open = $state(false);
 
   let selectedWatchlistName = $derived.by<string>(() => {
@@ -70,15 +65,6 @@
       return list;
     }
   });
-
-  // let currentFeedData = $derived.by(() => {
-  //   return (
-  //     watchlist?.["watchlist-entries"]?.map(({ symbol }) => {
-  //       console.log(allFeedData);
-  //       return allFeedData?.[symbol] || { name: symbol };
-  //     }) || []
-  //   );
-  // });
 
   $effect(() => useWebSocket({ watchlist }));
 
@@ -209,7 +195,9 @@
             {@const fd = allFeedData.current[we.symbol] || { name: we.symbol }}
             <Table.Row>
               <Table.Cell class="font-medium"
-                ><a href={`/symbol/${fd.name}`}>{fd.name}</a></Table.Cell
+                ><a href={`/symbol/${fd.name}`} class="hover:text-amber-400"
+                  >{fd.name}</a
+                ></Table.Cell
               >
               <Table.Cell class="text-right"
                 >{"ask" in fd ? `$${fd.ask.toFixed(2)}` : "?"}</Table.Cell

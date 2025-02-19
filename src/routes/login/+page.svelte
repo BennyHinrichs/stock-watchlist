@@ -29,11 +29,10 @@
     await $login.mutateAsync({
       username: body.get("username") as string,
       password: body.get("password") as string,
+      onSuccess: () => {
+        goto("/");
+      },
     });
-
-    if ($login.isSuccess) {
-      goto("/");
-    }
   }
 </script>
 

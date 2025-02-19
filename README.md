@@ -64,7 +64,7 @@ npm publish
     - [x] I think I have to sub to the candle for this
     - [x] Figure out how to collate quote and candle responses
   - [x] Edit waitlist name
-    - [ ] Handle flash
+    - [x] Handle flash
     - [ ] Check duplicate names on FE
   - [ ] Delete waitlist
   - [ ] Send KEEPALIVE messages?

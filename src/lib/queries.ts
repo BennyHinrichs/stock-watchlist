@@ -77,6 +77,7 @@ export function useLogin() {
         | {
             username: string;
             password: string;
+            onSuccess: () => void;
           }
         | {
             username: string;
@@ -96,12 +97,15 @@ export function useLogin() {
           "remember-me": true,
         }),
       }).then((r) => r.json()),
-    onSuccess: (data: UserResponse) => {
+    onSuccess: (data: UserResponse, variables) => {
       sessionStorage?.setItem("user", JSON.stringify(data.data));
       queryClient.setQueryData(
         ["session-expiration"],
         new Date(data.data["session-expiration"]),
       );
+      if ("onSuccess" in variables) {
+        setTimeout(() => variables.onSuccess(), 0);
+      }
     },
   });
 }
