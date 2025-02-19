@@ -76,9 +76,10 @@ npm publish
   - [ ] Test for extra long names on inputs and displays
     - [ ] Add character limits?
 - Symbol Page
-  - [ ] Design
-  - [ ] Find chart library
-  - [ ] Sub to the WS data for the candles
+  - [x] Find chart library
+    - [ ] Get the stupid tooltip to work
+  - [x] Sub to the WS data for the candles
+    - [ ] Deal with the influx of data throwing it off occasionally
 - [ ] Check accessibility
 - [ ] Add tests
 - Login

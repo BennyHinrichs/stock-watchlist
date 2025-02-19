@@ -106,7 +106,7 @@ export function useWebSocket({
         ws = new WebSocket(apiQuoteToken.data.data["dxlink-url"]);
       }
 
-      if (watchlist && WebSocket.OPEN === ws.readyState) {
+      if ((watchlist || symbol) && WebSocket.OPEN === ws.readyState) {
         feedSubscriptionMessage();
       }
 
@@ -165,6 +165,7 @@ export function useWebSocket({
           case "FEED_DATA": {
             const newData: FeedData = {};
             const newSymbolData: SymbolData[] = [];
+            let shouldUpdateSymbol = false;
 
             splitArrayAtDelimiters(
               data.data[1],
@@ -190,7 +191,8 @@ export function useWebSocket({
                     ...allFeedData.current[name],
                     ...newFdData,
                   };
-                } else if (symbol) {
+                } else if (symbol && fd[0].includes("{")) {
+                  shouldUpdateSymbol = true;
                   if (fd[7] && fd[10]) {
                     newSymbolData.push({
                       name: symbol,
@@ -205,10 +207,9 @@ export function useWebSocket({
               });
 
             if (watchlist) {
-              allFeedData.current = newData;
-            } else if (symbol) {
+              allFeedData.current = { ...allFeedData.current, ...newData };
+            } else if (shouldUpdateSymbol) {
               symbolData.current = [...newSymbolData];
-              console.log(symbolData.current);
             }
             break;
           }
