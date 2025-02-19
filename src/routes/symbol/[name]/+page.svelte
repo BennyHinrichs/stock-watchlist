@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { base } from "$app/paths";
   import { page } from "$app/state";
   import { useWebSocket, type SymbolData } from "$lib/websocket.svelte.js";
   import { symbolData } from "../../state.svelte.js";
@@ -14,7 +15,9 @@
 
 <div class="flex flex-col justify-between gap-4 py-6 max-sm:flex-col">
   <div class="flex flex-col gap-4">
-    <a href="/"><h1 class="text-4xl uppercase">👁️ Watchlists 📈</h1></a>
+    <a href={`/${base}/`}
+      ><h1 class="text-4xl uppercase">👁️ Watchlists 📈</h1></a
+    >
     <h1 class="text-4xl text-amber-400 uppercase">${symbol}</h1>
   </div>
 

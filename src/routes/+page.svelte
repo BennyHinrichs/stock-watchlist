@@ -1,6 +1,7 @@
 <script lang="ts">
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
+  import { base } from "$app/paths";
   import Check from "lucide-svelte/icons/check";
   import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
   import { buttonVariants } from "$lib/components/ui/button/index.js";
@@ -195,8 +196,9 @@
             {@const fd = allFeedData.current[we.symbol] || { name: we.symbol }}
             <Table.Row>
               <Table.Cell class="font-medium"
-                ><a href={`/symbol/${fd.name}`} class="hover:text-amber-400"
-                  >{fd.name}</a
+                ><a
+                  href={`${base}/symbol/${fd.name}`}
+                  class="hover:text-amber-400">{fd.name}</a
                 ></Table.Cell
               >
               <Table.Cell class="text-right"
