@@ -5,6 +5,11 @@ This assumes you have pnpm installed
 ```bash
 pnpm i
 pnpm dev
+http://localhost:5173
+OR
+pnpm build
+pnpm preview
+http://localhost:4173
 ```
 
 # TODO

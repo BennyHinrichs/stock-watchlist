@@ -1,6 +1,7 @@
 {
   "name": "stock-watchlist",
   "version": "0.0.1",
+  "homepage": "https://bennyhinrichs.github.io/stock-watchlist/",
   "scripts": {
     "dev": "vite dev",
     "build": "vite build && npm run prepack",
@@ -8,7 +9,9 @@
     "prepare": "svelte-kit sync || echo ''",
     "prepack": "svelte-kit sync && svelte-package && publint",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch"
+    "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
+    "predeploy": "pnpm run build",
+    "deploy": "gh-pages -d dist"
   },
   "files": [
     "dist",
@@ -40,6 +43,7 @@
     "bits-ui": "0.22.0",
     "clsx": "^2.1.1",
     "cmdk-sv": "^0.0.18",
+    "gh-pages": "^6.3.0",
     "lucide-svelte": "^0.475.0",
     "prettier": "^3.5.0",
     "prettier-plugin-svelte": "^3.3.3",
