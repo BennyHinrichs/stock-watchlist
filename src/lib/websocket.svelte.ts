@@ -1,10 +1,11 @@
-import type { QueryObserverResult } from "@tanstack/svelte-query";
+import { type QueryObserverResult } from "@tanstack/svelte-query";
 import {
   useGetApiQuoteToken,
   type BaseWatchList,
   type QuoteTokenResponse,
 } from "./queries.js";
 import { splitArrayAtDelimiters } from "./utils.js";
+import { allFeedData } from "../routes/state.svelte.js";
 
 export type FeedData = {
   [symbol: string]: {
@@ -18,13 +19,7 @@ export type FeedData = {
 const QUOTE_CHANNEL = 1;
 const CANDLE_CHANNEL = 3;
 
-export function useWebSocket({
-  watchlist,
-  allFeedData,
-}: {
-  watchlist?: BaseWatchList;
-  allFeedData: FeedData;
-}) {
+export function useWebSocket({ watchlist }: { watchlist?: BaseWatchList }) {
   let apiQuoteToken = $state<QueryObserverResult<
     QuoteTokenResponse,
     Error
@@ -138,26 +133,31 @@ export function useWebSocket({
             break;
 
           case "FEED_DATA": {
+            const newData: FeedData = {};
+
             splitArrayAtDelimiters(
               data.data[1],
               data.channel === QUOTE_CHANNEL ? "Quote" : "Candle",
             )
               .filter(Array.isArray)
               .forEach((fd) => {
-                const newData =
+                const [name] = fd as [string];
+                const newFdData =
                   data.channel === QUOTE_CHANNEL
                     ? {
-                        name: fd[0],
-                        bid: fd[6],
-                        ask: fd[10],
+                        name,
+                        bid: fd[6] as number,
+                        ask: fd[10] as number,
                       }
                     : {
-                        name: fd[0],
-                        last: fd[10],
+                        name,
+                        last: fd[10] as number,
                       };
 
-                allFeedData[fd[0]] = { ...allFeedData[fd[0]], ...newData };
+                newData[name] = { ...allFeedData.current[name], ...newFdData };
               });
+
+            allFeedData.current = newData;
             break;
           }
         }

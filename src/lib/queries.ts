@@ -137,30 +137,39 @@ export function useMutateWatchlist() {
 
   return createMutation({
     mutationKey: ["watchlist"],
-    mutationFn: async (variables: { name: string; mode: "add" | "edit" }) => {
+    mutationFn: async (variables: {
+      name: string;
+      prevName?: string;
+      mode: "add" | "edit";
+    }) => {
       const user = getUserFromSessionStorage();
       const watchlists = queryClient.getQueryData<{
         data: { items: BaseWatchList[] };
       }>(["watchlists"]);
       const watchlist = watchlists?.data.items.find(
-        ({ name }) => name === variables.name,
+        ({ name }) => name === variables.prevName,
       );
 
-      return await fetch(baseUrl + "/watchlists", {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: user?.["session-token"] || "",
+      return await fetch(
+        baseUrl +
+          "/watchlists" +
+          (variables.mode === "add" ? "" : `/${variables.prevName}`),
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: user?.["session-token"] || "",
+          },
+          method: variables.mode === "add" ? "POST" : "PUT",
+          body: JSON.stringify(
+            variables.mode === "add"
+              ? {
+                  name: variables.name,
+                  "watchlist-entries": [],
+                }
+              : { ...watchlist, name: variables.name },
+          ),
         },
-        method: variables.mode === "add" ? "POST" : "PUT",
-        body: JSON.stringify(
-          variables.mode === "add"
-            ? {
-                name: variables.name,
-                "watchlist-entries": [],
-              }
-            : { ...watchlist, name: variables.name },
-        ),
-      }).then((r) => r.json());
+      ).then((r) => r.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({

@@ -63,8 +63,8 @@ npm publish
   - [x] Last Price
     - [x] I think I have to sub to the candle for this
     - [x] Figure out how to collate quote and candle responses
-  - [ ] Edit waitlist name
-    - [ ] Autofocus loads suggestions
+  - [x] Edit waitlist name
+    - [ ] Handle flash
     - [ ] Check duplicate names on FE
   - [ ] Delete waitlist
   - [ ] Send KEEPALIVE messages?
@@ -87,3 +87,4 @@ npm publish
   - [ ] Send to `/login` if that fails
   - [ ] Logout button
 - [ ] General error handling
+- [ ] Optimistic updates

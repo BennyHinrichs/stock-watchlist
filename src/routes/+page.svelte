@@ -10,17 +10,18 @@
   import AddSymbolDialog from "$lib/components/add-symbol-dialog.svelte";
   import DeleteDialog from "$lib/components/delete-dialog.svelte";
   import ManageWatchlistDialog from "$lib/components/manage-watchlist-dialog.svelte";
-  import { cn, splitArrayAtDelimiters } from "$lib/utils.js";
+  import { cn } from "$lib/utils.js";
   import {
     checkSessionExpiration,
     useMutateWatchlist,
-    useGetApiQuoteToken,
     useGetWatchlists,
     useLogin,
     useModifyWatchlist,
   } from "$lib/queries.js";
   import { page } from "$app/state";
   import { useWebSocket, type FeedData } from "$lib/websocket.svelte.js";
+  import { useQueryClient } from "@tanstack/svelte-query";
+  import { allFeedData } from "./state.svelte.js";
 
   const login = useLogin();
   const sessionExpiration = checkSessionExpiration();
@@ -39,8 +40,11 @@
   const watchlists = useGetWatchlists();
   const mutateWatchlist = useMutateWatchlist();
   const modifyWatchlist = useModifyWatchlist();
+  const queryClient = useQueryClient();
 
-  let allFeedData: FeedData = $state({});
+  // let allFeedData = $derived.by(() =>
+  //   queryClient.getQueryData<Record<string, FeedData>>(["all-feed-data"]),
+  // );
   let open = $state(false);
 
   let selectedWatchlistName = $derived.by<string>(() => {
@@ -67,15 +71,16 @@
     }
   });
 
-  let currentFeedData = $derived.by(() => {
-    return (
-      watchlist?.["watchlist-entries"]?.map(({ symbol }) => {
-        return allFeedData?.[symbol] || [];
-      }) || []
-    );
-  });
+  // let currentFeedData = $derived.by(() => {
+  //   return (
+  //     watchlist?.["watchlist-entries"]?.map(({ symbol }) => {
+  //       console.log(allFeedData);
+  //       return allFeedData?.[symbol] || { name: symbol };
+  //     }) || []
+  //   );
+  // });
 
-  $effect(() => useWebSocket({ watchlist, allFeedData }));
+  $effect(() => useWebSocket({ watchlist }));
 
   const handleMutateWatchlist = (mode: "add" | "edit") =>
     async function (event: SubmitEvent) {
@@ -83,15 +88,21 @@
 
       const form = event.target as HTMLFormElement;
       const body = new FormData(form);
+      const name = body.get("name") as string;
 
       await $mutateWatchlist.mutateAsync({
-        name: body.get("name") as string,
+        name,
+        prevName: selectedWatchlistName,
         mode,
       });
 
       (
         document.querySelector("[data-dialog-close]") as HTMLButtonElement
       )?.click();
+
+      if (name !== selectedWatchlistName) {
+        goto(`?watchlist=${name}`);
+      }
     };
 </script>
 
@@ -194,13 +205,14 @@
       </Table.Header>
       <svelte:boundary onerror={(error) => console.error(error)}>
         <Table.Body>
-          {#each currentFeedData as fd, i (i)}
+          {#each watchlist?.["watchlist-entries"] as we, i (i)}
+            {@const fd = allFeedData.current[we.symbol] || { name: we.symbol }}
             <Table.Row>
-              <Table.Cell class="font-medium">{fd.name}</Table.Cell>
+              <Table.Cell class="font-medium"
+                ><a href={`/symbol/${fd.name}`}>{fd.name}</a></Table.Cell
+              >
               <Table.Cell class="text-right"
-                >{typeof fd.ask === "number"
-                  ? `$${fd.ask.toFixed(2)}`
-                  : "?"}</Table.Cell
+                >{"ask" in fd ? `$${fd.ask.toFixed(2)}` : "?"}</Table.Cell
               >
               <Table.Cell class="text-right"
                 >{typeof fd.bid === "number"
