@@ -240,7 +240,7 @@ export function useModifyWatchlist() {
   });
 }
 
-type QuoteTokenResponse = {
+export type QuoteTokenResponse = {
   data: {
     token: string;
     "dxlink-url": string;

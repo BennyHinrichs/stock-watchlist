@@ -20,6 +20,7 @@
     useModifyWatchlist,
   } from "$lib/queries.js";
   import { page } from "$app/state";
+  import { useWebSocket, type FeedData } from "$lib/websocket.svelte.js";
 
   const login = useLogin();
   const sessionExpiration = checkSessionExpiration();
@@ -37,12 +38,10 @@
 
   const watchlists = useGetWatchlists();
   const addWatchlist = useAddWatchlist();
-  const apiQuoteToken = useGetApiQuoteToken();
   const modifyWatchlist = useModifyWatchlist();
 
-  let allFeedData: { [symbol: string]: (string | number)[] } = $state({});
+  let allFeedData: FeedData = $state({});
   let open = $state(false);
-  let ws: WebSocket | null = $state(null);
 
   let selectedWatchlistName = $derived.by<string>(() => {
     const searchWatchlist = page.url.searchParams.get("watchlist");
@@ -76,91 +75,7 @@
     );
   });
 
-  const feedSubscriptionMessage = $derived.by(() => () => {
-    const newFeedData =
-      watchlist?.["watchlist-entries"]?.map(({ symbol }) => ({
-        symbol,
-        type: "Quote",
-      })) || [];
-
-    ws!.send(
-      JSON.stringify({
-        type: "FEED_SUBSCRIPTION",
-        channel: 1,
-        add: newFeedData,
-      }),
-    );
-  });
-
-  $effect(() => {
-    if ($apiQuoteToken.isSuccess) {
-      if (!ws) {
-        ws = new WebSocket($apiQuoteToken.data.data["dxlink-url"]);
-      }
-
-      if (watchlist && WebSocket.OPEN === ws.readyState) {
-        feedSubscriptionMessage();
-      }
-
-      ws.onopen = () => {
-        ws!.send(
-          JSON.stringify({
-            type: "SETUP",
-            channel: 0,
-            keepaliveTimeout: 60,
-            acceptKeepaliveTimeout: 60,
-            version: "1.0.0",
-          }),
-        );
-      };
-
-      ws.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        console.log(data);
-
-        switch (data.type) {
-          case "SETUP":
-            ws!.send(
-              JSON.stringify({
-                type: "AUTH",
-                channel: 0,
-                token: $apiQuoteToken.data.data.token,
-              }),
-            );
-            break;
-
-          case "AUTH_STATE":
-            if (data.state === "AUTHORIZED") {
-              ws!.send(
-                JSON.stringify({
-                  type: "CHANNEL_REQUEST",
-                  channel: 1,
-                  service: "FEED",
-                  parameters: { contract: "AUTO" },
-                }),
-              );
-            }
-            break;
-
-          case "CHANNEL_OPENED":
-            feedSubscriptionMessage();
-            break;
-
-          case "FEED_DATA": {
-            const freshFeedData = splitArrayAtDelimiters(
-              data.data[1],
-              "Quote",
-            ).filter(Array.isArray);
-
-            freshFeedData.forEach((fd) => {
-              allFeedData[fd[0] as string] = fd;
-            });
-            break;
-          }
-        }
-      };
-    }
-  });
+  $effect(() => useWebSocket({ watchlist, allFeedData }));
 
   async function handleNewWatchlist(event: SubmitEvent) {
     event.preventDefault();
@@ -278,20 +193,20 @@
       <Table.Body>
         {#each currentFeedData as fd, i (i)}
           <Table.Row>
-            <Table.Cell class="font-medium">{fd[0]}</Table.Cell>
+            <Table.Cell class="font-medium">{fd.name}</Table.Cell>
             <Table.Cell class="text-right"
-              >{typeof fd[6] === "number"
-                ? `$${fd[6].toFixed(2)}`
+              >{typeof fd.ask === "number"
+                ? `$${fd.ask.toFixed(2)}`
                 : "?"}</Table.Cell
             >
             <Table.Cell class="text-right"
-              >{typeof fd[10] === "number"
-                ? `$${fd[10].toFixed(2)}`
+              >{typeof fd.bid === "number"
+                ? `$${fd.bid.toFixed(2)}`
                 : "?"}</Table.Cell
             >
             <Table.Cell class="text-right"
-              >{typeof fd[4] === "number"
-                ? `$${fd[4].toFixed(2)}`
+              >{typeof fd.last === "number"
+                ? `$${fd.last.toFixed(2)}`
                 : "?"}</Table.Cell
             >
             <Table.Cell class="flex items-center justify-end gap-2">
@@ -299,7 +214,7 @@
                 handleConfirm={async () => {
                   await $modifyWatchlist.mutateAsync({
                     watchlistName: watchlist?.name,
-                    symbolsToRemove: [fd[0] as string],
+                    symbolsToRemove: [fd.name],
                   });
 
                   (
