@@ -17,7 +17,8 @@
     useMutateWatchlist,
     useGetWatchlists,
     useLogin,
-    useModifyWatchlist,
+    useModifyWatchlistContent,
+    type WatchlistMutateModes,
   } from "$lib/queries.js";
   import { page } from "$app/state";
   import { useWebSocket } from "$lib/websocket.svelte.js";
@@ -39,7 +40,7 @@
 
   const watchlists = useGetWatchlists();
   const mutateWatchlist = useMutateWatchlist();
-  const modifyWatchlist = useModifyWatchlist();
+  const modifyWatchlistContent = useModifyWatchlistContent();
 
   let open = $state(false);
 
@@ -69,13 +70,21 @@
 
   $effect(() => useWebSocket({ watchlist }));
 
-  const handleMutateWatchlist = (mode: "add" | "edit") =>
-    async function (event: SubmitEvent) {
+  const handleMutateWatchlist = (
+    variables:
+      | { mode: "add" | "edit" }
+      | { mode: "delete"; watchlistName: string },
+  ) =>
+    async function (event: MouseEvent | SubmitEvent) {
       event.preventDefault();
 
+      const { mode } = variables;
       const form = event.target as HTMLFormElement;
-      const body = new FormData(form);
-      const name = body.get("name") as string;
+      const body = mode !== "delete" ? new FormData(form) : null;
+      const name =
+        "watchlistName" in variables
+          ? variables.watchlistName
+          : (body?.get("name") as string);
 
       await $mutateWatchlist.mutateAsync({
         name,
@@ -87,7 +96,9 @@
         document.querySelector("[data-dialog-close]") as HTMLButtonElement
       )?.click();
 
-      if (name !== selectedWatchlistName) {
+      if (variables.mode === "delete") {
+        goto(`${base}?watchlist=`);
+      } else if (name !== selectedWatchlistName) {
         goto(`${base}?watchlist=${name}`);
       }
     };
@@ -109,6 +120,7 @@
         )}
         role="combobox"
         aria-expanded={open}
+        aria-label="Select a watchlist"
       >
         {selectedWatchlistName || "Select a watchlist..."}
         <ChevronsUpDown class="opacity-50" />
@@ -152,7 +164,7 @@
     </Popover.Root>
 
     <ManageWatchlistDialog
-      handleSubmit={handleMutateWatchlist("add")}
+      handleSubmit={handleMutateWatchlist({ mode: "add" })}
       mode="add"
       submitPending={$mutateWatchlist.isPending}
       watchlistName={watchlist?.name}
@@ -176,13 +188,16 @@
           <Table.Head class=""
             ><div class="flex items-center justify-end gap-2">
               <ManageWatchlistDialog
-                handleSubmit={handleMutateWatchlist("edit")}
+                handleSubmit={handleMutateWatchlist({ mode: "edit" })}
                 mode="edit"
                 submitPending={false}
                 watchlistName={watchlist?.name}
               ></ManageWatchlistDialog>
               <DeleteDialog
-                handleConfirm={() => void "TODO"}
+                handleConfirm={handleMutateWatchlist({
+                  mode: "delete",
+                  watchlistName: watchlist?.name,
+                })}
                 message="Are you sure you want to remove this watchlist?"
                 confirmPending={false}
               ></DeleteDialog>
@@ -217,7 +232,7 @@
               <Table.Cell class="flex items-center justify-end gap-2">
                 <DeleteDialog
                   handleConfirm={async () => {
-                    await $modifyWatchlist.mutateAsync({
+                    await $modifyWatchlistContent.mutateAsync({
                       watchlistName: watchlist?.name,
                       symbolsToRemove: [fd.name],
                     });
@@ -229,7 +244,7 @@
                     )?.click();
                   }}
                   message="Are you sure you want to remove this symbol?"
-                  confirmPending={$modifyWatchlist.isPending}
+                  confirmPending={$modifyWatchlistContent.isPending}
                 ></DeleteDialog></Table.Cell
               >
             </Table.Row>

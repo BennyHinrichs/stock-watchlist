@@ -1,3 +1,4 @@
+import { url } from "@layerstack/utils/routing";
 import {
   createMutation,
   createQuery,
@@ -136,6 +137,8 @@ export function useGetWatchlists() {
   });
 }
 
+export type WatchlistMutateModes = "add" | "edit" | "delete";
+
 export function useMutateWatchlist() {
   const queryClient = useQueryClient();
 
@@ -144,36 +147,58 @@ export function useMutateWatchlist() {
     mutationFn: async (variables: {
       name: string;
       prevName?: string;
-      mode: "add" | "edit";
+      mode: WatchlistMutateModes;
     }) => {
+      const watchlistBaseUrl = baseUrl + `/watchlists`;
       const user = getUserFromSessionStorage();
       const watchlists = queryClient.getQueryData<{
         data: { items: BaseWatchList[] };
       }>(["watchlists"]);
-      const watchlist = watchlists?.data.items.find(
+      const prevWatchlist = watchlists?.data.items.find(
         ({ name }) => name === variables.prevName,
       );
 
-      return await fetch(
-        baseUrl +
-          "/watchlists" +
-          (variables.mode === "add" ? "" : `/${variables.prevName}`),
+      const modeMapping: Record<
+        WatchlistMutateModes,
         {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: user?.["session-token"] || "",
+          url: string;
+          method: "POST" | "PUT" | "DELETE";
+          body?: Record<string, any>;
+        }
+      > = {
+        add: {
+          url: watchlistBaseUrl,
+          method: "POST",
+          body: {
+            name: variables.name,
+            "watchlist-entries": [],
           },
-          method: variables.mode === "add" ? "POST" : "PUT",
-          body: JSON.stringify(
-            variables.mode === "add"
-              ? {
-                  name: variables.name,
-                  "watchlist-entries": [],
-                }
-              : { ...watchlist, name: variables.name },
-          ),
         },
-      ).then((r) => r.json());
+        edit: {
+          url: `${watchlistBaseUrl}/${variables.prevName}`,
+          method: "PUT",
+          body: {
+            "watchlist-entries": [],
+            ...prevWatchlist,
+            name: variables.name,
+          },
+        },
+        delete: {
+          url: `${watchlistBaseUrl}/${variables.name}`,
+          method: "DELETE",
+        },
+      };
+
+      const modeValues = modeMapping[variables.mode];
+
+      return await fetch(modeValues.url, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: user?.["session-token"] || "",
+        },
+        method: modeValues.method,
+        body: JSON.stringify(modeValues.body),
+      }).then((r) => r.json());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
@@ -185,7 +210,7 @@ export function useMutateWatchlist() {
   });
 }
 
-export function useModifyWatchlist() {
+export function useModifyWatchlistContent() {
   const queryClient = useQueryClient();
 
   return createMutation({
@@ -268,5 +293,6 @@ export function useGetApiQuoteToken() {
         method: "GET",
       }).then((r) => r.json());
     },
+    staleTime: 1000 * 60 * 60 * 23,
   });
 }

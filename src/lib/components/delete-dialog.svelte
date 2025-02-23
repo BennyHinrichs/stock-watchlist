@@ -19,7 +19,7 @@
 <Dialog.Root>
   <Dialog.Trigger
     class={cn(buttonVariants({ variant: "ghost" }), "hover:text-red-600")}
-    ><XIcon /></Dialog.Trigger
+    aria-label="Delete"><XIcon /></Dialog.Trigger
   >
   <Dialog.Content class="sm:max-w-[425px]">
     <Dialog.Header>

@@ -162,6 +162,12 @@ export function useWebSocket({
             feedSubscriptionMessage(data.channel);
             break;
 
+          case "KEEPALIVE":
+            ws?.send(
+              JSON.stringify({ channel: data.channel, type: "KEEPALIVE" }),
+            );
+            break;
+
           case "FEED_DATA": {
             const newData: FeedData = {};
             const newSymbolData: SymbolData[] = [];
@@ -212,12 +218,12 @@ export function useWebSocket({
               allFeedData.current = { ...allFeedData.current, ...newData };
             } else if (shouldUpdateSymbol) {
               const mergedSymbolData = [
-                ...(symbolData.current || []),
+                ...(symbolData[symbol!] || []),
                 ...newSymbolData,
               ];
               mergedSymbolData.sort((a, b) => a.time.localeCompare(b.time));
 
-              symbolData.current = mergedSymbolData;
+              symbolData[symbol!] = mergedSymbolData;
             }
             break;
           }

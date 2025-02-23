@@ -30,14 +30,14 @@
     </div>
   </div>
 
-  {#if !symbolData.current}
+  {#if !symbolData[symbol]}
     <p>Loading...</p>
-  {:else if symbolData.current?.length === 0}
+  {:else if symbolData[symbol]?.length === 0}
     <p>No data available</p>
   {:else}
     <div class="h-[300px] rounded border p-4">
       <Chart
-        data={symbolData.current}
+        data={symbolData[symbol]}
         x="time"
         xScale={scaleBand().paddingInner(0.4)}
         y={["high", "low"]}

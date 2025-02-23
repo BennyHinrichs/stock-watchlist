@@ -26,12 +26,13 @@
       class={cn(
         buttonVariants({ variant: "default" }),
         "bg-amber-400 hover:bg-amber-500",
-      )}><Plus /> Add</Dialog.Trigger
+      )}
+      aria-label="Add Watchlist"><Plus /> Add</Dialog.Trigger
     >
   {:else}
     <Dialog.Trigger
       class={cn(buttonVariants({ variant: "ghost" }), "hover:text-amber-500")}
-      ><EditPencil /></Dialog.Trigger
+      aria-label="Edit Watchlist"><EditPencil /></Dialog.Trigger
     >
   {/if}
   <Dialog.Content class="sm:max-w-[425px]">
@@ -56,7 +57,12 @@
     >
       <div class="grid grid-cols-4 items-center gap-4">
         <label for="name" class="text-right">Name</label>
-        <Input name="name" placeholder="To the Moon #19" class="col-span-3" />
+        <Input
+          name="name"
+          placeholder="To the Moon #19"
+          class="col-span-3"
+          value={watchlistName}
+        />
       </div>
     </form>
     <Dialog.Footer>

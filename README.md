@@ -31,8 +31,8 @@ We'll see if I ever get to these
   - [x] Edit waitlist name
     - [x] Handle flash
     - [ ] Check duplicate names on FE
-  - [ ] Delete waitlist
-  - [ ] Send KEEPALIVE messages?
+  - [x] Delete waitlist
+  - [x] Send KEEPALIVE messages
   - [ ] Limit to every 5 seconds
   - [ ] Autocomplete actually gets and suggests symbols
     - [ ] Checks for duplicates
@@ -43,6 +43,7 @@ We'll see if I ever get to these
 - Symbol Page
   - [x] Find chart library
     - [?] Get the stupid tooltip to work
+      - I did but it's having an off by 1 error somewhere. Can't tell if it's me or the svelte 4 library interfacing with 5.
   - [x] Sub to the WS data for the candles
     - [ ] Deal with the influx of data throwing it off occasionally
       - Seems like it's when it gets a new date delimited candle update

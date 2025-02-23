@@ -4,11 +4,11 @@
   import { cn } from "$lib/utils.js";
   import * as Dialog from "$lib/components/ui/dialog/index.js";
   import Autocomplete from "$lib/components/ui/autocomplete/autocomplete.svelte";
-  import { useModifyWatchlist } from "$lib/queries.js";
+  import { useModifyWatchlistContent } from "$lib/queries.js";
 
   let { watchlistName = "" } = $props();
 
-  const modifyWatchlist = useModifyWatchlist();
+  const modifyWatchlistContent = useModifyWatchlistContent();
 
   async function handleNewSymbol(event: SubmitEvent) {
     event.preventDefault();
@@ -16,7 +16,7 @@
     const form = event.target as HTMLFormElement;
     const body = new FormData(form);
 
-    await $modifyWatchlist.mutateAsync({
+    await $modifyWatchlistContent.mutateAsync({
       watchlistName,
       symbolsToAdd: [body.get("name") as string],
     });
@@ -32,7 +32,9 @@
     class={cn(
       buttonVariants({ variant: "outline" }),
       "hover:bg-amber-400 hover:text-white",
-    )}><Plus /> <span class="max-sm:hidden">Add</span></Dialog.Trigger
+    )}
+    aria-label="Add Symbol"
+    ><Plus /> <span class="max-sm:hidden">Add</span></Dialog.Trigger
   >
   <Dialog.Content class="sm:max-w-[425px]">
     <Dialog.Header>
@@ -57,7 +59,7 @@
       <Button
         type="submit"
         form="add-watchlist-form"
-        disabled={$modifyWatchlist.isPending}>Save changes</Button
+        disabled={$modifyWatchlistContent.isPending}>Save changes</Button
       >
     </Dialog.Footer>
   </Dialog.Content>
