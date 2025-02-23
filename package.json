@@ -64,6 +64,7 @@
     ]
   },
   "dependencies": {
+    "@layerstack/utils": "^0.1.0",
     "@tailwindcss/vite": "^4.0.6",
     "@tanstack/svelte-query": "^5.66.0",
     "d3-array": "^3.2.4",

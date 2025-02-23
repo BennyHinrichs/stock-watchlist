@@ -42,16 +42,17 @@ We'll see if I ever get to these
     - [ ] Add character limits?
 - Symbol Page
   - [x] Find chart library
-    - [ ] Get the stupid tooltip to work
+    - [?] Get the stupid tooltip to work
   - [x] Sub to the WS data for the candles
     - [ ] Deal with the influx of data throwing it off occasionally
       - Seems like it's when it gets a new date delimited candle update
 - [ ] Check accessibility
 - [ ] Add tests
 - Login
-  - [ ] Fix logging in so that it actually sends you to the `/` route
-  - [ ] Send refresh token if expired
-  - [ ] Send to `/login` if that fails
+  - [x] Fix logging in so that it actually sends you to the `/` route
+  - [ ] Make checkUserCredentials() to handle logged in logic
+    - [ ] Send refresh token if expired
+    - [ ] Send to `/login` if that fails
   - [ ] Logout button
 - [ ] General error handling
 - [ ] Optimistic updates

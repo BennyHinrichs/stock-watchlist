@@ -68,7 +68,7 @@ export function useWebSocket({
         newFeedData[CANDLE_CHANNEL].push({
           symbol: `${symbol}{=30m}`,
           type: "Candle",
-          fromTime: Date.now() - 1000 * 60 * 60 * 24,
+          fromTime: Date.now() - 1000 * 60 * 60 * 24 * 2,
         });
       }
 
@@ -179,12 +179,12 @@ export function useWebSocket({
                     data.channel === QUOTE_CHANNEL
                       ? {
                           name,
-                          bid: fd[6] as number,
-                          ask: fd[10] as number,
+                          bid: Number(fd[6]),
+                          ask: Number(fd[10]),
                         }
                       : {
                           name,
-                          last: fd[10] as number,
+                          last: Number(fd[10]),
                         };
 
                   newData[name] = {
@@ -193,14 +193,16 @@ export function useWebSocket({
                   };
                 } else if (symbol && fd[0].includes("{")) {
                   shouldUpdateSymbol = true;
-                  if (fd[7] && fd[10]) {
+                  const open = Number(fd[7]);
+                  const close = Number(fd[10]);
+                  if (open && close) {
                     newSymbolData.push({
                       name: symbol,
                       time: new Date(fd[4] as number).toISOString(),
-                      open: fd[7] as number,
-                      high: fd[8] as number,
-                      low: fd[9] as number,
-                      close: fd[10] as number,
+                      open,
+                      high: Number(fd[8]),
+                      low: Number(fd[9]),
+                      close,
                     });
                   }
                 }
@@ -209,7 +211,13 @@ export function useWebSocket({
             if (watchlist) {
               allFeedData.current = { ...allFeedData.current, ...newData };
             } else if (shouldUpdateSymbol) {
-              symbolData.current = [...newSymbolData];
+              const mergedSymbolData = [
+                ...(symbolData.current || []),
+                ...newSymbolData,
+              ];
+              mergedSymbolData.sort((a, b) => a.time.localeCompare(b.time));
+
+              symbolData.current = mergedSymbolData;
             }
             break;
           }
