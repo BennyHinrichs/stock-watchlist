@@ -296,3 +296,26 @@ export function useGetApiQuoteToken() {
     staleTime: 1000 * 60 * 60 * 23,
   });
 }
+
+export function useGetSymbols(searchTerm: string) {
+  return createQuery({
+    queryKey: ["symbols", searchTerm],
+    queryFn: async (): Promise<{ label: string; value: string }[]> => {
+      return (
+        await fetch(
+          `https://vast.tastyworks.com/symbols/search/${searchTerm}`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+            },
+            method: "GET",
+          },
+        ).then((r) => r.json())
+      ).data?.items.map(({ symbol }: { symbol: string }) => ({
+        label: symbol,
+        value: symbol,
+      }));
+    },
+    staleTime: 1000 * 60 * 60 * 24,
+  });
+}

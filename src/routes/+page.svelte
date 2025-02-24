@@ -18,7 +18,6 @@
     useGetWatchlists,
     useLogin,
     useModifyWatchlistContent,
-    type WatchlistMutateModes,
   } from "$lib/queries.js";
   import { page } from "$app/state";
   import { useWebSocket } from "$lib/websocket.svelte.js";
@@ -51,7 +50,7 @@
       return searchWatchlist;
     }
 
-    if ($watchlists.isSuccess && $watchlists.data.data.items.length) {
+    if ($watchlists.isSuccess && $watchlists.data.data?.items.length) {
       return $watchlists.data.data.items[0].name;
     }
 

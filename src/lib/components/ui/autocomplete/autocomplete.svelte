@@ -14,6 +14,7 @@
     name = "",
     options = [] as Option[],
     value = null as Option | null,
+    inputValue = $bindable(""),
     placeholder = "Type to search…",
     disabled = false,
     emptyMessage = "No options",
@@ -23,7 +24,7 @@
   let inputRef: HTMLInputElement;
   let isOpen = $state(false);
   let selected: Option | null = $state(value);
-  let inputValue: string = $state(value?.label ?? "");
+  // let inputValue: string = $state(value?.label ?? "");
   let isLoading = $state(false);
 
   function handleKeyDown(event: KeyboardEvent) {
@@ -58,6 +59,8 @@
   }
 
   function handleSelectOption(selectedOption: Option) {
+    console.log({ selectedOption });
+
     inputValue = selectedOption.label;
     selected = selectedOption;
     onValueChange?.(selectedOption);
@@ -76,19 +79,19 @@
       {placeholder}
       {disabled}
       value={inputValue}
-      on:input={(e: Event) => {
+      oninput={(e: Event) => {
         // Svelte input events give access via target.value
         inputValue = (e.target as HTMLInputElement).value;
       }}
-      on:blur={handleBlur}
-      on:focus={() => (isOpen = true)}
+      onblur={handleBlur}
+      onfocus={() => (isOpen = true)}
       class="text-base"
     />
   </div>
   <div class="relative mt-1">
     <div
       class={cn(
-        "animate-in fade-in-0 zoom-in-95 absolute top-0 z-10 w-full rounded-xl bg-white outline-none",
+        "animate-in fade-in-0 zoom-in-95 absolute top-0 z-10 min-h-10 w-full rounded-xl bg-white outline-none",
         isOpen ? "block" : "hidden",
       )}
     >
@@ -105,7 +108,7 @@
             {#each options as option (option.value)}
               <Command.Item
                 value={option.label}
-                on:select={() => handleSelectOption(option)}
+                onSelect={() => handleSelectOption(option)}
                 class={cn(
                   "flex w-full items-center gap-2",
                   selected?.value !== option.value ? "pl-8" : "",

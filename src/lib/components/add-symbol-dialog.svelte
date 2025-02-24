@@ -4,21 +4,18 @@
   import { cn } from "$lib/utils.js";
   import * as Dialog from "$lib/components/ui/dialog/index.js";
   import Autocomplete from "$lib/components/ui/autocomplete/autocomplete.svelte";
-  import { useModifyWatchlistContent } from "$lib/queries.js";
+  import { useGetSymbols, useModifyWatchlistContent } from "$lib/queries.js";
 
   let { watchlistName = "" } = $props();
+  let searchTerm = $state("");
 
   const modifyWatchlistContent = useModifyWatchlistContent();
+  const symbolSearchResults = $derived.by(() => useGetSymbols(searchTerm));
 
-  async function handleNewSymbol(event: SubmitEvent) {
-    event.preventDefault();
-
-    const form = event.target as HTMLFormElement;
-    const body = new FormData(form);
-
+  async function handleNewSymbol({ value }: { label: string; value: string }) {
     await $modifyWatchlistContent.mutateAsync({
       watchlistName,
-      symbolsToAdd: [body.get("name") as string],
+      symbolsToAdd: [value],
     });
 
     (
@@ -52,7 +49,14 @@
     >
       <div class="grid grid-cols-4 items-center gap-4">
         <label for="name" class="text-right">Name</label>
-        <Autocomplete name="name" placeholder="GOOG" class="col-span-3" />
+        <Autocomplete
+          name="name"
+          placeholder="GOOG"
+          class="col-span-3 overflow-visible"
+          bind:inputValue={searchTerm}
+          options={$symbolSearchResults.data}
+          onValueChange={handleNewSymbol}
+        />
       </div>
     </form>
     <Dialog.Footer>

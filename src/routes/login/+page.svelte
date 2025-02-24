@@ -18,7 +18,7 @@
   }
 
   if (browser && sessionExpiration?.isSessionExpired === false) {
-    goto("${base}/");
+    goto(`${base}/`);
   }
 
   async function handleSubmit(event: Event) {
