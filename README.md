@@ -30,16 +30,20 @@ We'll see if I ever get to these
     - [x] Figure out how to collate quote and candle responses
   - [x] Edit waitlist name
     - [x] Handle flash
-    - [ ] Check duplicate names on FE
+    - [x] Check duplicate names on FE
+    - [x] Reset values when switching between add/edit
   - [x] Delete waitlist
   - [x] Send KEEPALIVE messages
   - [ ] Limit to every 5 seconds
-  - [ ] Autocomplete actually gets and suggests symbols
-    - [ ] Checks for duplicates
+  - [x] Autocomplete actually gets and suggests symbols
+    - [ ] Click triggers blur, so it never sets the value
+    - [ ] Submit works, but after the requery, it doesn't subscribe to the new symbol via the websocket until refresh
+    - [x] Checks for duplicates
   - [x] Would be nice to move all the WS stuff to its own file
     - Not as familiar with distributing state in Svelte 5
-  - [ ] Test for extra long names on inputs and displays
-    - [ ] Add character limits?
+  - [x] Test for extra long names on inputs and displays
+    - [x] Special characters
+    - [x] Add character limits?
 - Symbol Page
   - [x] Find chart library
     - [?] Get the stupid tooltip to work

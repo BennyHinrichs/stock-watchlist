@@ -19,6 +19,7 @@
     disabled = false,
     emptyMessage = "No options",
     onValueChange = () => void 0,
+    maxLength,
   } = $props();
 
   let inputRef: HTMLInputElement;
@@ -59,8 +60,6 @@
   }
 
   function handleSelectOption(selectedOption: Option) {
-    console.log({ selectedOption });
-
     inputValue = selectedOption.label;
     selected = selectedOption;
     onValueChange?.(selectedOption);
@@ -86,6 +85,7 @@
       onblur={handleBlur}
       onfocus={() => (isOpen = true)}
       class="text-base"
+      maxlength={maxLength}
     />
   </div>
   <div class="relative mt-1">

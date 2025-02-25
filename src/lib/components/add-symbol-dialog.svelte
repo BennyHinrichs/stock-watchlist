@@ -4,17 +4,30 @@
   import { cn } from "$lib/utils.js";
   import * as Dialog from "$lib/components/ui/dialog/index.js";
   import Autocomplete from "$lib/components/ui/autocomplete/autocomplete.svelte";
-  import { useGetSymbols, useModifyWatchlistContent } from "$lib/queries.js";
+  import {
+    useGetSymbols,
+    useModifyWatchlistContent,
+    type BaseWatchList,
+  } from "$lib/queries.js";
 
-  let { watchlistName = "" } = $props();
+  let { watchlist }: { watchlist: BaseWatchList } = $props();
   let searchTerm = $state("");
+  let errorSymbol = $state("");
 
   const modifyWatchlistContent = useModifyWatchlistContent();
   const symbolSearchResults = $derived.by(() => useGetSymbols(searchTerm));
 
   async function handleNewSymbol({ value }: { label: string; value: string }) {
+    const hasSymbol = watchlist["watchlist-entries"]?.some(
+      ({ symbol }) => symbol === value,
+    );
+    if (hasSymbol) {
+      errorSymbol = value;
+      return;
+    }
+
     await $modifyWatchlistContent.mutateAsync({
-      watchlistName,
+      watchlistName: watchlist.name,
       symbolsToAdd: [value],
     });
 
@@ -42,29 +55,23 @@
         Chuck another symbol onto the pile
       </p>
     </Dialog.Header>
-    <form
-      id="add-watchlist-form"
-      class="grid gap-4 py-4"
-      onsubmit={handleNewSymbol}
-    >
-      <div class="grid grid-cols-4 items-center gap-4">
-        <label for="name" class="text-right">Name</label>
-        <Autocomplete
-          name="name"
-          placeholder="GOOG"
-          class="col-span-3 overflow-visible"
-          bind:inputValue={searchTerm}
-          options={$symbolSearchResults.data}
-          onValueChange={handleNewSymbol}
-        />
-      </div>
-    </form>
-    <Dialog.Footer>
-      <Button
-        type="submit"
-        form="add-watchlist-form"
-        disabled={$modifyWatchlistContent.isPending}>Save changes</Button
-      >
-    </Dialog.Footer>
+    <div class="grid grid-cols-4 items-center gap-4">
+      {#if errorSymbol && errorSymbol === searchTerm}
+        <div></div>
+        <div class="col-span-3 text-sm text-red-500">
+          {errorSymbol} is already in the watchlist
+        </div>
+      {/if}
+      <label for="name" class="text-right">Name</label>
+      <Autocomplete
+        name="name"
+        placeholder="GOOG"
+        class="col-span-3 overflow-visible"
+        bind:inputValue={searchTerm}
+        options={$symbolSearchResults.data}
+        onValueChange={handleNewSymbol}
+        maxLength={15}
+      />
+    </div>
   </Dialog.Content>
 </Dialog.Root>

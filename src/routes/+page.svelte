@@ -1,12 +1,8 @@
 <script lang="ts">
+  import WatchlistSelect from "$lib/components/watchlist-select.svelte";
   import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
   import { base } from "$app/paths";
-  import Check from "lucide-svelte/icons/check";
-  import ChevronsUpDown from "lucide-svelte/icons/chevrons-up-down";
-  import { buttonVariants } from "$lib/components/ui/button/index.js";
-  import * as Command from "$lib/components/ui/command/index.js";
-  import * as Popover from "$lib/components/ui/popover/index.js";
   import * as Table from "$lib/components/ui/table/index.js";
   import AddSymbolDialog from "$lib/components/add-symbol-dialog.svelte";
   import DeleteDialog from "$lib/components/delete-dialog.svelte";
@@ -41,8 +37,6 @@
   const mutateWatchlist = useMutateWatchlist();
   const modifyWatchlistContent = useModifyWatchlistContent();
 
-  let open = $state(false);
-
   let selectedWatchlistName = $derived.by<string>(() => {
     const searchWatchlist = page.url.searchParams.get("watchlist");
 
@@ -59,48 +53,13 @@
 
   let watchlist = $derived.by(() => {
     if ($watchlists.isSuccess && selectedWatchlistName) {
-      const list = $watchlists.data.data.items.find(
-        (watchlist) => watchlist.name === selectedWatchlistName,
+      return $watchlists.data.data.items.find(
+        (wl) => wl.name === selectedWatchlistName,
       );
-
-      return list;
     }
   });
 
   $effect(() => useWebSocket({ watchlist }));
-
-  const handleMutateWatchlist = (
-    variables:
-      | { mode: "add" | "edit" }
-      | { mode: "delete"; watchlistName: string },
-  ) =>
-    async function (event: MouseEvent | SubmitEvent) {
-      event.preventDefault();
-
-      const { mode } = variables;
-      const form = event.target as HTMLFormElement;
-      const body = mode !== "delete" ? new FormData(form) : null;
-      const name =
-        "watchlistName" in variables
-          ? variables.watchlistName
-          : (body?.get("name") as string);
-
-      await $mutateWatchlist.mutateAsync({
-        name,
-        prevName: selectedWatchlistName,
-        mode,
-      });
-
-      (
-        document.querySelector("[data-dialog-close]") as HTMLButtonElement
-      )?.click();
-
-      if (variables.mode === "delete") {
-        goto(`${base}?watchlist=`);
-      } else if (name !== selectedWatchlistName) {
-        goto(`${base}?watchlist=${name}`);
-      }
-    };
 </script>
 
 <div class="flex justify-between gap-4 py-6 max-sm:flex-col">
@@ -109,61 +68,8 @@
   </div>
 
   <div class="flex gap-2">
-    <Popover.Root bind:open>
-      <Popover.Trigger
-        class={cn(
-          buttonVariants({
-            variant: "outline",
-            className: "w-[200px] justify-between",
-          }),
-        )}
-        role="combobox"
-        aria-expanded={open}
-        aria-label="Select a watchlist"
-      >
-        {selectedWatchlistName || "Select a watchlist..."}
-        <ChevronsUpDown class="opacity-50" />
-      </Popover.Trigger>
-      <Popover.Content class="w-[200px] p-0">
-        <Command.Root>
-          <Command.Input placeholder="Search..." />
-          <Command.List>
-            <Command.Empty>No watchlists found.</Command.Empty>
-            <Command.Group>
-              {#if $watchlists.isLoading}
-                <Command.Loading />
-              {/if}
-              {#if $watchlists.error}
-                An error has occurred:
-                {$watchlists.error.message}
-              {/if}
-              {#if $watchlists.isSuccess}
-                {#each $watchlists.data.data.items as watchlist}
-                  <Command.Item
-                    value={watchlist.name}
-                    onSelect={() => {
-                      goto(`${base}?watchlist=${watchlist.name}`);
-                      open = false;
-                    }}
-                  >
-                    <Check
-                      class={cn(
-                        selectedWatchlistName !== watchlist.name &&
-                          "text-transparent",
-                      )}
-                    />
-                    {watchlist.name}
-                  </Command.Item>
-                {/each}
-              {/if}
-            </Command.Group>
-          </Command.List>
-        </Command.Root>
-      </Popover.Content>
-    </Popover.Root>
-
+    <WatchlistSelect {selectedWatchlistName}></WatchlistSelect>
     <ManageWatchlistDialog
-      handleSubmit={handleMutateWatchlist({ mode: "add" })}
       mode="add"
       submitPending={$mutateWatchlist.isPending}
       watchlistName={watchlist?.name}
@@ -179,7 +85,7 @@
         <Table.Row>
           <Table.Head class="flex items-center justify-between gap-2"
             >Symbol
-            <AddSymbolDialog watchlistName={watchlist?.name}></AddSymbolDialog>
+            <AddSymbolDialog {watchlist}></AddSymbolDialog>
           </Table.Head>
           <Table.Head class="text-right">Bid Price</Table.Head>
           <Table.Head class="text-right">Ask Price</Table.Head>
@@ -187,16 +93,25 @@
           <Table.Head class=""
             ><div class="flex items-center justify-end gap-2">
               <ManageWatchlistDialog
-                handleSubmit={handleMutateWatchlist({ mode: "edit" })}
                 mode="edit"
                 submitPending={false}
                 watchlistName={watchlist?.name}
               ></ManageWatchlistDialog>
               <DeleteDialog
-                handleConfirm={handleMutateWatchlist({
-                  mode: "delete",
-                  watchlistName: watchlist?.name,
-                })}
+                handleConfirm={async () => {
+                  await $mutateWatchlist.mutateAsync({
+                    name: watchlist?.name,
+                    mode: "delete",
+                  });
+
+                  (
+                    document.querySelector(
+                      "[data-dialog-close]",
+                    ) as HTMLButtonElement
+                  )?.click();
+
+                  goto(`${base}?watchlist=`);
+                }}
                 message="Are you sure you want to remove this watchlist?"
                 confirmPending={false}
               ></DeleteDialog>
