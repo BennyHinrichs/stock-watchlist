@@ -44,6 +44,7 @@ We'll see if I ever get to these
   - [x] Test for extra long names on inputs and displays
     - [x] Special characters
     - [x] Add character limits?
+  - [ ] Need better loading indicator on first entry
 - Symbol Page
   - [x] Find chart library
     - [?] Get the stupid tooltip to work

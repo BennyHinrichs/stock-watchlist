@@ -7,7 +7,6 @@
   import AddSymbolDialog from "$lib/components/add-symbol-dialog.svelte";
   import DeleteDialog from "$lib/components/delete-dialog.svelte";
   import ManageWatchlistDialog from "$lib/components/manage-watchlist-dialog.svelte";
-  import { cn } from "$lib/utils.js";
   import {
     checkSessionExpiration,
     useMutateWatchlist,
@@ -16,7 +15,7 @@
     useModifyWatchlistContent,
   } from "$lib/queries.js";
   import { page } from "$app/state";
-  import { useWebSocket } from "$lib/websocket.svelte.js";
+  import { useWebSocket, type FeedData } from "$lib/websocket.svelte.js";
   import { allFeedData } from "./state.svelte.js";
 
   const login = useLogin();
@@ -59,7 +58,27 @@
     }
   });
 
+  // svelte-ignore state_referenced_locally
+  let feedData = $state(allFeedData.current);
+
   $effect(() => useWebSocket({ watchlist }));
+
+  // TODO test during day when it's actually pumping data
+  $effect(() => {
+    const newData = watchlist?.["watchlist-entries"].some(
+      ({ symbol }) =>
+        (allFeedData.current[symbol]
+          ? Object.keys(allFeedData.current[symbol]).length
+          : 0) > (feedData[symbol] ? Object.keys(feedData[symbol]).length : 0),
+    );
+
+    if (newData) {
+      feedData = allFeedData.current;
+    }
+    const interval = setInterval(() => (feedData = allFeedData.current), 5000);
+
+    return () => clearInterval(interval);
+  });
 </script>
 
 <div class="flex justify-between gap-4 py-6 max-sm:flex-col">
@@ -122,7 +141,9 @@
       <svelte:boundary onerror={(error) => console.error(error)}>
         <Table.Body>
           {#each watchlist?.["watchlist-entries"] as we, i (i)}
-            {@const fd = allFeedData.current[we.symbol] || { name: we.symbol }}
+            {@const fd = feedData[we.symbol] || {
+              name: we.symbol,
+            }}
             <Table.Row>
               <Table.Cell class="font-medium"
                 ><a
