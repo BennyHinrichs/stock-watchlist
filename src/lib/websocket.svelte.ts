@@ -68,7 +68,12 @@ export function useWebSocket({
         newFeedData[CANDLE_CHANNEL].push({
           symbol: `${symbol}{=30m}`,
           type: "Candle",
-          fromTime: Date.now() - 1000 * 60 * 60 * 24 * 2,
+          fromTime: Date.now() - 1000 * 60 * 60 * 24,
+        });
+
+        newFeedData[CANDLE_CHANNEL].push({
+          symbol,
+          type: "Candle",
         });
       }
 
@@ -171,7 +176,8 @@ export function useWebSocket({
           case "FEED_DATA": {
             const newData: FeedData = {};
             const newSymbolData: SymbolData[] = [];
-            let shouldUpdateSymbol = false;
+            let shouldUpdateFeedData = false,
+              shouldUpdateSymbol = false;
 
             splitArrayAtDelimiters(
               data.data[1],
@@ -179,7 +185,22 @@ export function useWebSocket({
             )
               .filter(Array.isArray)
               .forEach((fd) => {
-                if (watchlist) {
+                if (symbol && fd[0].includes("{")) {
+                  shouldUpdateSymbol = true;
+                  const open = Number(fd[7]);
+                  const close = Number(fd[10]);
+                  if (open && close) {
+                    newSymbolData.push({
+                      name: symbol,
+                      time: new Date(fd[4] as number).toISOString(),
+                      open,
+                      high: Number(fd[8]),
+                      low: Number(fd[9]),
+                      close,
+                    });
+                  }
+                } else {
+                  shouldUpdateFeedData = true;
                   const [name] = fd as [string];
                   const newFdData =
                     data.channel === QUOTE_CHANNEL
@@ -197,24 +218,10 @@ export function useWebSocket({
                     ...allFeedData.current[name],
                     ...newFdData,
                   };
-                } else if (symbol && fd[0].includes("{")) {
-                  shouldUpdateSymbol = true;
-                  const open = Number(fd[7]);
-                  const close = Number(fd[10]);
-                  if (open && close) {
-                    newSymbolData.push({
-                      name: symbol,
-                      time: new Date(fd[4] as number).toISOString(),
-                      open,
-                      high: Number(fd[8]),
-                      low: Number(fd[9]),
-                      close,
-                    });
-                  }
                 }
               });
 
-            if (watchlist) {
+            if (shouldUpdateFeedData) {
               allFeedData.current = { ...allFeedData.current, ...newData };
             } else if (shouldUpdateSymbol) {
               const mergedSymbolData = [

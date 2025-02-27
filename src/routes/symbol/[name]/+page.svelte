@@ -2,7 +2,7 @@
   import { base } from "$app/paths";
   import { page } from "$app/state";
   import { useWebSocket, type SymbolData } from "$lib/websocket.svelte.js";
-  import { symbolData } from "../../state.svelte.js";
+  import { allFeedData, symbolData } from "../../state.svelte.js";
   import {
     Chart,
     Svg,
@@ -25,8 +25,19 @@
     <a href={`${base}/`}><h1 class="text-4xl uppercase">👁️ Watchlists 📈</h1></a
     >
     <div class="flex items-end justify-between">
-      <h1 class="text-4xl text-amber-400 uppercase">${symbol}</h1>
-      Past 24 Hours
+      <h1 class="text-4xl text-amber-400 uppercase" title="symbol name">
+        ${symbol}
+      </h1>
+      <div class="flex flex-col items-end gap-1">
+        <span class="text-gray-500 uppercase" title="last price">
+          {#if allFeedData.current[symbol]}
+            (${allFeedData.current[symbol].last})
+          {:else}
+            ($?)
+          {/if}
+        </span>
+        <span>Past 24 Hours</span>
+      </div>
     </div>
   </div>
 

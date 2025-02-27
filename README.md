@@ -51,6 +51,8 @@ We'll see if I ever get to these
   - [x] Sub to the WS data for the candles
     - [ ] Deal with the influx of data throwing it off occasionally
       - Seems like it's when it gets a new date delimited candle update
+  - [x] Show last closing price
+    - [x] Involves refactoring the ws handler
 - [ ] Check accessibility
 - [ ] Add tests
 - Login
