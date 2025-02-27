@@ -22,7 +22,7 @@
     maxLength,
   } = $props();
 
-  let inputRef: HTMLInputElement;
+  let inputRef: HTMLInputElement | undefined = undefined;
   let isOpen = $state(false);
   let selected: Option | null = $state(value);
   // let inputValue: string = $state(value?.label ?? "");
@@ -73,7 +73,7 @@
 <Command.Root onkeydown={handleKeyDown} class={className}>
   <div>
     <Command.Input
-      bind:this={inputRef}
+      el={inputRef}
       {name}
       {placeholder}
       {disabled}

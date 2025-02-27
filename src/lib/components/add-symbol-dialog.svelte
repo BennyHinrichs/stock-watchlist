@@ -71,6 +71,7 @@
         options={$symbolSearchResults.data}
         onValueChange={handleNewSymbol}
         maxLength={15}
+        disabled={$modifyWatchlistContent.isPending}
       />
     </div>
   </Dialog.Content>

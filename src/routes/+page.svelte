@@ -96,6 +96,13 @@
   </div>
 </div>
 
+{#if $watchlists.isLoading}
+  <p>Loading...</p>
+{:else if $watchlists.error}
+  <p>An error has occurred: {$watchlists.error.message}</p>
+{:else if $watchlists.isSuccess && !$watchlists.data.data?.items.length}
+  <p>No watchlists found.</p>
+{/if}
 {#if selectedWatchlistName}
   {#if watchlist}
     <Table.Root>
