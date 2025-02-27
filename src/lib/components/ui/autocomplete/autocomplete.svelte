@@ -53,10 +53,19 @@
     }
   }
 
+  function handleMouseDown(e: MouseEvent) {
+    if ((e.target as HTMLDivElement).closest("[role='option']")) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+  }
+
   function handleBlur() {
     isOpen = false;
     // Reset the input value to the selected option’s label
-    inputValue = selected?.label ?? "";
+    if (selected) {
+      inputValue = selected.label ?? "";
+    }
   }
 
   function handleSelectOption(selectedOption: Option) {
@@ -70,7 +79,11 @@
   }
 </script>
 
-<Command.Root onkeydown={handleKeyDown} class={className}>
+<Command.Root
+  onkeydown={handleKeyDown}
+  onmousedown={handleMouseDown}
+  class={className}
+>
   <div>
     <Command.Input
       el={inputRef}

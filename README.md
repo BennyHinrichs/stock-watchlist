@@ -36,7 +36,7 @@ We'll see if I ever get to these
   - [x] Send KEEPALIVE messages
   - [ ] Limit to every 5 seconds
   - [x] Autocomplete actually gets and suggests symbols
-    - [ ] Click triggers blur, so it never sets the value
+    - [x] Click triggers blur, so it never sets the value
     - [ ] Submit works, but after the requery, it doesn't subscribe to the new symbol via the websocket until refresh
     - [x] Checks for duplicates
   - [x] Would be nice to move all the WS stuff to its own file
