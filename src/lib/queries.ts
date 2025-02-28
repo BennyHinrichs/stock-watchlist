@@ -6,7 +6,7 @@ import {
 
 const baseUrl = "https://api.cert.tastyworks.com";
 
-type UserResponse = {
+export type UserResponse = {
   data: {
     user: {
       email: string;
@@ -28,43 +28,6 @@ function getUserFromSessionStorage() {
   } catch {
     return null;
   }
-}
-
-export function checkSessionExpiration() {
-  if (typeof window === "undefined") return null;
-
-  const queryClient = useQueryClient();
-  let sessionExpiration = queryClient.getQueryData<Date>([
-    "session-expiration",
-  ]);
-  let user;
-
-  if (sessionExpiration && sessionExpiration > new Date())
-    return { isSessionExpired: false as const };
-
-  try {
-    user = JSON.parse(
-      sessionStorage.getItem("user") || "invalid",
-    ) as UserResponse["data"];
-    sessionExpiration = new Date(user["session-expiration"]);
-  } catch {
-    sessionExpiration = new Date(0);
-  }
-
-  if (sessionExpiration > new Date()) {
-    return { isSessionExpired: false as const };
-  }
-
-  if (user) {
-    return {
-      isSessionExpired: true as const,
-      username: user?.user.username,
-      rememberToken: user?.["remember-token"],
-    };
-  }
-
-  // no credentials
-  return null;
 }
 
 export function useLogin() {
@@ -118,10 +81,14 @@ export type BaseWatchList = {
   "order-index": number;
 };
 
+type WatchlistResponse = {
+  data: { items: BaseWatchList[] };
+};
+
 export function useGetWatchlists() {
   return createQuery({
     queryKey: ["watchlists"],
-    queryFn: async (): Promise<{ data: { items: BaseWatchList[] } }> => {
+    queryFn: async (): Promise<WatchlistResponse> => {
       const user = getUserFromSessionStorage();
 
       return await fetch(baseUrl + "/watchlists", {
@@ -259,6 +226,51 @@ export function useModifyWatchlistContent() {
         body: JSON.stringify(list),
       }).then((r) => r.json());
     },
+    onMutate: (variables) => {
+      const previousWatchlists = queryClient.getQueryData<WatchlistResponse>([
+        "watchlists",
+      ]);
+
+      const updatedItems = previousWatchlists?.data.items.map((list) => {
+        if (list.name === variables.watchlistName) {
+          const watchlistEntries = [
+            ...(list["watchlist-entries"] || []),
+            ...(variables.symbolsToAdd?.map((symbol) => ({ symbol })) || []),
+          ];
+
+          return {
+            ...list,
+            "watchlist-entries": variables.symbolsToRemove
+              ? watchlistEntries.filter(
+                  ({ symbol }) => !variables.symbolsToRemove!.includes(symbol),
+                )
+              : watchlistEntries,
+          };
+        }
+        return list;
+      });
+
+      // attempt optimistic update
+      queryClient.setQueryData<WatchlistResponse>(["watchlists"], {
+        data: { items: updatedItems || [] },
+      });
+
+      return {
+        previousWatchlists: previousWatchlists || { data: { items: [] } },
+      };
+    },
+    onError: (
+      err: any,
+      variables: any,
+      context?: { previousWatchlists: WatchlistResponse },
+    ) => {
+      if (context?.previousWatchlists) {
+        queryClient.setQueryData<WatchlistResponse>(
+          ["watchlists"],
+          context.previousWatchlists,
+        );
+      }
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["watchlists"],
@@ -282,6 +294,10 @@ export function useGetApiQuoteToken() {
     queryKey: ["api-quote-token"],
     queryFn: async (): Promise<QuoteTokenResponse> => {
       const user = getUserFromSessionStorage();
+
+      if (!user) {
+        throw new Error("No user found in session storage");
+      }
 
       return await fetch(baseUrl + "/api-quote-tokens", {
         headers: {

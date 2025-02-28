@@ -1,0 +1,77 @@
+import { useQueryClient } from "@tanstack/svelte-query";
+import { useLogin, type UserResponse } from "./queries.js";
+import { browser } from "$app/environment";
+import { goto } from "$app/navigation";
+import { base } from "$app/paths";
+import { lastRoute } from "../routes/state.svelte.js";
+
+function checkSessionExpiration() {
+  if (typeof window === "undefined") return null;
+
+  const queryClient = useQueryClient();
+  let sessionExpiration = queryClient.getQueryData<Date>([
+    "session-expiration",
+  ]);
+  let user;
+
+  if (sessionExpiration && sessionExpiration > new Date())
+    return { isSessionExpired: false as const };
+
+  try {
+    user = JSON.parse(
+      sessionStorage.getItem("user") || "invalid",
+    ) as UserResponse["data"];
+    sessionExpiration = new Date(user["session-expiration"]);
+  } catch {
+    sessionExpiration = new Date(0);
+  }
+
+  if (sessionExpiration > new Date()) {
+    return { isSessionExpired: false as const };
+  }
+
+  if (user) {
+    return {
+      isSessionExpired: true as const,
+      username: user?.user.username,
+      rememberToken: user?.["remember-token"],
+    };
+  }
+
+  // no credentials
+  return null;
+}
+
+export function checkUserCredentials(url: URL) {
+  const login = useLogin();
+  const sessionExpiration = checkSessionExpiration();
+
+  if (sessionExpiration?.isSessionExpired) {
+    // @ts-expect-error I guess this isn't seeing the store in this file?
+    $login.mutate({
+      username: sessionExpiration.username,
+      rememberToken: sessionExpiration.rememberToken,
+    });
+  }
+
+  switch (url.pathname) {
+    case "/login": {
+      if (browser && sessionExpiration?.isSessionExpired === false) {
+        goto(`${base}/${lastRoute.current}`);
+        lastRoute.current = "/login";
+      }
+      break;
+    }
+
+    default: {
+      if (
+        (browser && !sessionExpiration) ||
+        sessionExpiration?.isSessionExpired
+      ) {
+        lastRoute.current = `${url.pathname}${url.search}`;
+        goto(`${base}/login`);
+      }
+      break;
+    }
+  }
+}

@@ -1,25 +1,17 @@
 <script lang="ts">
-  import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
   import { base } from "$app/paths";
+  import { page } from "$app/state";
   import Button from "$lib/components/ui/button/button.svelte";
   import * as Card from "$lib/components/ui/card/index.js";
   import Input from "$lib/components/ui/input/input.svelte";
-  import { checkSessionExpiration, useLogin } from "$lib/queries.js";
+  import { useLogin } from "$lib/queries.js";
+  import { checkUserCredentials } from "$lib/credentials.svelte";
+  import { lastRoute } from "../state.svelte.js";
+
+  checkUserCredentials(page.url);
 
   const login = useLogin();
-  const sessionExpiration = checkSessionExpiration();
-
-  if (sessionExpiration?.isSessionExpired) {
-    $login.mutate({
-      username: sessionExpiration.username,
-      rememberToken: sessionExpiration.rememberToken,
-    });
-  }
-
-  if (browser && sessionExpiration?.isSessionExpired === false) {
-    goto(`${base}/`);
-  }
 
   async function handleSubmit(event: Event) {
     event.preventDefault();
@@ -31,7 +23,8 @@
       username: body.get("username") as string,
       password: body.get("password") as string,
       onSuccess: () => {
-        goto(`${base}/`);
+        goto(`${base}${lastRoute.current || "/"}`);
+        lastRoute.current = "/login";
       },
     });
   }

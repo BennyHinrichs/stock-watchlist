@@ -1,6 +1,5 @@
 <script lang="ts">
   import WatchlistSelect from "$lib/components/watchlist-select.svelte";
-  import { browser } from "$app/environment";
   import { goto } from "$app/navigation";
   import { base } from "$app/paths";
   import * as Table from "$lib/components/ui/table/index.js";
@@ -8,29 +7,17 @@
   import DeleteDialog from "$lib/components/delete-dialog.svelte";
   import ManageWatchlistDialog from "$lib/components/manage-watchlist-dialog.svelte";
   import {
-    checkSessionExpiration,
     useMutateWatchlist,
     useGetWatchlists,
-    useLogin,
     useModifyWatchlistContent,
   } from "$lib/queries.js";
   import { page } from "$app/state";
-  import { useWebSocket, type FeedData } from "$lib/websocket.svelte.js";
+  import { useWebSocket } from "$lib/websocket.svelte.js";
   import { allFeedData } from "./state.svelte.js";
+  import { untrack } from "svelte";
+  import { checkUserCredentials } from "$lib/credentials.svelte.js";
 
-  const login = useLogin();
-  const sessionExpiration = checkSessionExpiration();
-
-  if (sessionExpiration?.isSessionExpired) {
-    $login.mutate({
-      username: sessionExpiration.username,
-      rememberToken: sessionExpiration.rememberToken,
-    });
-  }
-
-  if ((browser && !sessionExpiration) || sessionExpiration?.isSessionExpired) {
-    goto(`${base}/login`);
-  }
+  checkUserCredentials(page.url);
 
   const watchlists = useGetWatchlists();
   const mutateWatchlist = useMutateWatchlist();
@@ -52,7 +39,7 @@
 
   let watchlist = $derived.by(() => {
     if ($watchlists.isSuccess && selectedWatchlistName) {
-      return $watchlists.data.data.items.find(
+      return $watchlists.data.data?.items.find(
         (wl) => wl.name === selectedWatchlistName,
       );
     }
@@ -60,24 +47,41 @@
 
   // svelte-ignore state_referenced_locally
   let feedData = $state(allFeedData.current);
+  let lastUpdated = $state(0);
+  let watchlistEntries: { symbol: string }[] | undefined = $state([]);
 
   $effect(() => useWebSocket({ watchlist }));
 
   // TODO test during day when it's actually pumping data
   $effect(() => {
-    const newData = watchlist?.["watchlist-entries"].some(
+    const now = untrack(() => Date.now());
+    let hasUpdated = false;
+    const hasFirstFeedData = watchlist?.["watchlist-entries"]?.some(
       ({ symbol }) =>
         (allFeedData.current[symbol]
           ? Object.keys(allFeedData.current[symbol]).length
           : 0) > (feedData[symbol] ? Object.keys(feedData[symbol]).length : 0),
     );
 
-    if (newData) {
+    if (hasFirstFeedData) {
       feedData = allFeedData.current;
+      lastUpdated = now;
+      hasUpdated = true;
     }
-    const interval = setInterval(() => (feedData = allFeedData.current), 5000);
 
-    return () => clearInterval(interval);
+    if (watchlist?.["watchlist-entries"]?.length !== watchlistEntries?.length) {
+      watchlistEntries = watchlist?.["watchlist-entries"];
+      feedData = allFeedData.current;
+      lastUpdated = now;
+      hasUpdated = true;
+    }
+
+    if (!hasUpdated && now - lastUpdated > 5000) {
+      setTimeout(() => {
+        feedData = allFeedData.current;
+        lastUpdated = now;
+      }, 5000);
+    }
   });
 </script>
 

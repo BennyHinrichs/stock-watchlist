@@ -37,7 +37,8 @@ We'll see if I ever get to these
   - [ ] Limit to every 5 seconds
   - [x] Autocomplete actually gets and suggests symbols
     - [x] Click triggers blur, so it never sets the value
-    - [ ] Submit works, but after the requery, it doesn't subscribe to the new symbol via the websocket until refresh
+    - [x] Submit works, but after the requery, it doesn't subscribe to the new symbol via the websocket until refresh
+    - [x] Same thing happens with delete symbol
     - [x] Checks for duplicates
   - [x] Would be nice to move all the WS stuff to its own file
     - Not as familiar with distributing state in Svelte 5
@@ -58,9 +59,12 @@ We'll see if I ever get to these
 - [ ] Add tests
 - Login
   - [x] Fix logging in so that it actually sends you to the `/` route
-  - [ ] Make checkUserCredentials() to handle logged in logic
-    - [ ] Send refresh token if expired
-    - [ ] Send to `/login` if that fails
+  - [x] Make checkUserCredentials() to handle logged in logic
+    - [x] Send refresh token if expired
+    - [x] Send to `/login` if that fails
+    - [x] Include on symbol page
   - [ ] Logout button
 - [ ] General error handling
 - [ ] Optimistic updates
+  - [x] Add/delete symbol
+  - [ ] Add/edit/delete watchlist

@@ -108,7 +108,7 @@ export function useWebSocket({
   $effect(() => {
     if (apiQuoteToken?.isSuccess) {
       if (!ws) {
-        ws = new WebSocket(apiQuoteToken.data.data["dxlink-url"]);
+        ws = new WebSocket(apiQuoteToken.data.data?.["dxlink-url"]);
       }
 
       if ((watchlist || symbol) && WebSocket.OPEN === ws.readyState) {

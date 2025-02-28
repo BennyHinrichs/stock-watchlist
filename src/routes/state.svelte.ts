@@ -7,3 +7,5 @@ export const allFeedData = $state<{ current: FeedData }>({
 export const symbolData = $state<{ [symbol: string]: SymbolData[] | null }>({
   current: null,
 });
+
+export const lastRoute = $state<{ current: string }>({ current: "" });

@@ -14,6 +14,9 @@
   } from "layerchart";
   import { PeriodType, format } from "@layerstack/utils";
   import { scaleBand, scaleOrdinal } from "d3-scale";
+  import { checkUserCredentials } from "$lib/credentials.svelte.js";
+
+  checkUserCredentials(page.url);
 
   const symbol = page.params.name;
 
