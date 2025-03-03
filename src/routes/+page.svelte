@@ -85,6 +85,10 @@
   });
 </script>
 
+<svelte:head>
+  <title>Watchlists - Home</title>
+</svelte:head>
+
 <div class="flex justify-between gap-4 py-6 max-sm:flex-col">
   <div>
     <h1 class="text-4xl text-amber-400 uppercase">👁️ Watchlists 📈</h1>

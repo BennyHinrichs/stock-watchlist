@@ -3,5 +3,8 @@ export declare const allFeedData: {
     current: FeedData;
 };
 export declare const symbolData: {
-    current: SymbolData[];
+    [symbol: string]: SymbolData[] | null;
+};
+export declare const lastRoute: {
+    current: string;
 };

@@ -20,6 +20,12 @@ pnpm preview
 http://localhost:4173
 ```
 
+Tests are still a work in progress
+
+```
+pnpm test
+```
+
 # TODO
 
 We'll see if I ever get to these

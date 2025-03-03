@@ -16,6 +16,7 @@ test("logs in", async ({ page }) => {
 
 test.describe("interacts with watchlists and symbols", () => {
   test("adds watchlist", async ({ page }) => {
+    page.goto("/");
     const addWatchlist = page.getByRole("button", { name: "Add Watchlist" });
     await addWatchlist.click();
 

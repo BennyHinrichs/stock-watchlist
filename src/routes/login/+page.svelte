@@ -30,6 +30,10 @@
   }
 </script>
 
+<svelte:head>
+  <title>Watchlists - Login</title>
+</svelte:head>
+
 <div class="flex h-full items-center justify-center pt-10">
   <Card.Root class="w-90">
     <Card.Header>
