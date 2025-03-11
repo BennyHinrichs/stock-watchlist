@@ -23,8 +23,8 @@
       username: body.get("username") as string,
       password: body.get("password") as string,
       onSuccess: () => {
-        goto(`${base}${lastRoute.current || "/"}`);
-        lastRoute.current = "/login";
+        goto(`${lastRoute.current || "/"}`);
+        lastRoute.current = `${base}/login`;
       },
     });
   }

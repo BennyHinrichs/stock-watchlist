@@ -4,6 +4,7 @@ import { browser } from "$app/environment";
 import { goto } from "$app/navigation";
 import { base } from "$app/paths";
 import { lastRoute } from "../routes/state.svelte.js";
+import { get } from "svelte/store";
 
 function checkSessionExpiration() {
   if (typeof window === "undefined") return null;
@@ -45,19 +46,19 @@ function checkSessionExpiration() {
 export function checkUserCredentials(url: URL) {
   const login = useLogin();
   const sessionExpiration = checkSessionExpiration();
+  const pathname = url.pathname.slice(base.length);
 
   if (sessionExpiration?.isSessionExpired) {
-    // @ts-expect-error I guess this isn't seeing the store in this file?
-    $login.mutate({
+    get(login).mutate({
       username: sessionExpiration.username,
       rememberToken: sessionExpiration.rememberToken,
     });
   }
 
-  switch (url.pathname) {
+  switch (pathname) {
     case "/login": {
       if (browser && sessionExpiration?.isSessionExpired === false) {
-        goto(`${base}/${lastRoute.current}`);
+        goto(`${lastRoute.current}`);
         lastRoute.current = "/login";
       }
       break;
